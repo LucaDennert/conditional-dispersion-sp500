@@ -1,0 +1,20 @@
+[primary] n = 166, RMSE (correlation units, estimation) 0.0883
+       const  0.0902  (se 0.0292, t  3.09)
+        rc21  0.2263  (se 0.0960, t  2.36)
+        rc63  0.1290  (se 0.1296, t  1.00)
+       rc252  0.3073  (se 0.1489, t  2.06)
+          ic  0.0364  (se 0.1209, t  0.30)
+R2 = 0.419   RMSE = 0.1044
+
+[no_ic] n = 166, RMSE (correlation units, estimation) 0.0884
+       const  0.0948  (se 0.0244, t  3.89)
+        rc21  0.2360  (se 0.0824, t  2.86)
+        rc63  0.1376  (se 0.1399, t  0.98)
+       rc252  0.3234  (se 0.1254, t  2.58)
+R2 = 0.418   RMSE = 0.1044
+
+[pure_rc21] RCfcst = rc21; RMSE (estimation) 0.1150
+
+[pure_rc63] RCfcst = rc63; RMSE (estimation) 0.1034
+
+Out-of-sample RMSE (2011-2025): primary 0.1343, no_ic 0.1352, pure_rc21 0.1767, pure_rc63 0.1589

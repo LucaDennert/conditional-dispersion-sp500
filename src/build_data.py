@@ -74,10 +74,12 @@ def build_iv_members(raw: Path) -> pd.DataFrame:
         return pd.DataFrame()
     parts = []
     for f in files:
-        s = pd.read_csv(f, usecols=["secid", "date", "days", "cp_flag", "impl_volatility"], parse_dates=["date"])
-        s = s[s["days"].isin([30, 91])]
-        parts.append(s.groupby(["secid", "date", "days"])["impl_volatility"].mean().unstack())
-    iv = pd.concat(parts)
+        for s in pd.read_csv(f, usecols=["secid", "date", "days", "cp_flag", "impl_volatility"],
+                             parse_dates=["date"], chunksize=2_000_000):
+            s = s[s["days"].isin([30, 91])]
+            parts.append(s.groupby(["secid", "date", "days"])["impl_volatility"].mean())
+    # call/put average; a (secid, date, days) split across chunks is re-averaged by its parts
+    iv = pd.concat(parts).groupby(level=[0, 1, 2]).mean().unstack()
     iv.columns = [f"iv{int(c)}" for c in iv.columns]
     return iv.reset_index()
 

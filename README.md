@@ -16,6 +16,7 @@ results/     figures and tables (aggregated only)
 ## Status
 
 - [x] Pre-registration drafted
-- [ ] Data extraction
-- [ ] Signals and forecast (estimation sample 1996–2010)
+- [x] Data extraction (CRSP, IvyDB standardized options, SPX/VIX, zero curve)
+- [ ] Listed option histories for the backtest (needs WRDS programmatic access)
+- [x] Signals and forecast (estimation sample 1996–2010, frozen in `results/forecast_frozen.json`)
 - [ ] Backtest and kill test (test sample 2011–2025)
