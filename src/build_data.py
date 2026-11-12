@@ -32,9 +32,10 @@ def load_link(raw: Path) -> pd.DataFrame:
 def build_members(raw: Path, link: pd.DataFrame) -> pd.DataFrame:
     c = pd.read_csv(
         raw / "crsp_sp500_constituents_daily.csv.gz",
-        usecols=["PERMNO", "DlyCalDt", "DlyCap", "DlyRet"],
+        usecols=["PERMNO", "DlyCalDt", "DlyCap", "DlyRet", "DlyRetx", "DlyPrc"],
         parse_dates=["DlyCalDt"], na_values=["NA", "", "."],
-    ).rename(columns={"PERMNO": "permno", "DlyCalDt": "date", "DlyCap": "cap", "DlyRet": "ret"})
+    ).rename(columns={"PERMNO": "permno", "DlyCalDt": "date", "DlyCap": "cap", "DlyRet": "ret",
+                      "DlyRetx": "retx", "DlyPrc": "prc"})
     c = c[c["date"] <= END].drop_duplicates(["permno", "date"])
     c["logret"] = np.log1p(c["ret"])
     # attach the OptionMetrics secid valid on each date
@@ -53,6 +54,13 @@ def build_weights(members: pd.DataFrame) -> pd.DataFrame:
     me["weight"] = me["cap"] / me.groupby("date")["cap"].transform("sum")
     me["month"] = me["date"].dt.to_period("M")
     return me[["month", "date", "permno", "secid", "cap", "weight"]]
+
+
+def build_zero_curve(raw: Path) -> pd.DataFrame:
+    """Continuously compounded zero rates (decimal), date x days."""
+    z = pd.read_csv(raw / "optionm_zerocd.csv.gz", parse_dates=["date"])
+    z = z[z["date"] <= END]
+    return z.pivot_table(index="date", columns="days", values="rate") / 100.0
 
 
 def build_spx(raw: Path) -> pd.DataFrame:
@@ -94,6 +102,7 @@ def main(raw_dir: str, out_dir: str) -> None:
     weights.to_pickle(out / "weights_monthly.pkl")
     spx = build_spx(raw)
     spx.to_pickle(out / "spx_daily.pkl")
+    build_zero_curve(raw).to_pickle(out / "zero_curve.pkl")
     ivm = build_iv_members(raw)
     if len(ivm):
         ivm.to_pickle(out / "iv_members.pkl")
