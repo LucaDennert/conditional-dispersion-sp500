@@ -5,6 +5,8 @@ Research project: does conditioning a dispersion trade (short index volatility, 
 - **Rules first:** see [`PREREGISTRATION.md`](PREREGISTRATION.md), committed before any result was computed.
 - **Data:** OptionMetrics IvyDB US and CRSP via WRDS (1996–2025). The data are licensed and are not included; `notebooks/01_estrazione_ivydb_us.ipynb` reproduces the extraction for anyone with WRDS access.
 
+See [`ROADMAP.md`](ROADMAP.md) for the paper plan and current status.
+
 ## Structure
 
 ```
