@@ -1,0 +1,9 @@
+{
+  "c": 0.0937,
+  "c_median": 0.0905,
+  "n_entries": 176,
+  "mean_cost_rt_volpts": 2.25,
+  "mean_h_spx_rt": 0.8,
+  "mean_h_basket_rt": 1.448,
+  "sample": "entries 1996-01 to 2010-12 (estimation sample)"
+}

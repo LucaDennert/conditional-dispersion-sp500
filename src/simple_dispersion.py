@@ -11,7 +11,11 @@ P&L of each straddle is computed exactly on the realized price path:
     exit          actual payoff |S_T - K| at expiry (63 trading days)
 P&L is expressed in vol points per unit of initial vega, so legs are comparable and the trade
 is vega-neutral by construction:  dispersion = sum_i w_i x_i - x_SPX.
-Costs: half bid/ask spread paid at entry, in vol points (desk assumptions, see COSTS).
+Costs: half bid/ask spread paid at entry, in vol points. Two versions:
+    net       flat desk assumptions (COSTS)
+    net_real  half-spreads measured on the listed ~3-month near-ATM straddles chosen by
+              src.select_contracts on the same entry date (listed_halfspread.pkl), basket cost
+              weighted by index weight; names without a listed quote get the basket median.
 
 Usage: python -m src.simple_dispersion DATA_DIR RESULTS_DIR
 """
@@ -78,6 +82,20 @@ def rate_91(z: pd.DataFrame, d: pd.Timestamp) -> float:
     return float(np.interp(91, row.index.values.astype(float), row.values))
 
 
+SPX_SECID = 108105
+
+
+def real_halfspreads(data: Path) -> pd.DataFrame | None:
+    """Half-spread (vol points) of each listed straddle at selection: (dC+dP)/2 / (vegaC+vegaP)."""
+    f = data / "listed_halfspread.pkl"
+    if not f.exists():
+        return None
+    g = pd.read_pickle(f)
+    g = g[(g["vg"] > 0.5) & np.isfinite(g["hs"])]          # drop near-zero-vega pairs (deep ITM)
+    g["hs"] = g["hs"].clip(upper=5.0)
+    return g[["secid", "date", "hs"]]
+
+
 def build(data_dir: str | Path, top_n: int | None = TOP_N) -> pd.DataFrame:
     data = Path(data_dir)
     members = pd.read_pickle(data / "members_daily.pkl")
@@ -93,6 +111,8 @@ def build(data_dir: str | Path, top_n: int | None = TOP_N) -> pd.DataFrame:
     div = (Rt - Rx).rolling(252, min_periods=200).sum()            # trailing dividend yield
     iv91 = ivm.pivot_table(index="date", columns="secid", values="iv91")
     spx_rx = spx["spx"].pct_change()
+    hs = real_halfspreads(data)
+    hs_by_date = {d: g.set_index("secid")["hs"] for d, g in hs.groupby("date")} if hs is not None else {}
 
     rows = []
     for t in entry_dates(spx):
@@ -124,11 +144,23 @@ def build(data_dir: str | Path, top_n: int | None = TOP_N) -> pd.DataFrame:
         x_i, a_i = hedged_pnl(rx_i, rt_i, np.array([iv_i]), r, np.array([q_i]))
 
         long_leg = float(ww @ x_m)
+        h = hs_by_date.get(t)
+        if h is not None and SPX_SECID in h.index:
+            hm = h.drop(SPX_SECID, errors="ignore")
+            hm_i = hm.reindex(w["secid"]).values
+            found = np.isfinite(hm_i)
+            cost_s = float(ww @ np.where(found, hm_i, np.nanmedian(hm_i) if found.any() else np.nan))
+            cost_i = float(h[SPX_SECID])
+            listed_cov = float(ww[found].sum())
+        else:
+            cost_s = cost_i = listed_cov = np.nan
         short_leg = -float(x_i[0])
         rows.append({
             "date": t, "exit": dates[i + H], "n_names": int(ok.sum()), "coverage": float(w["weight"].sum()),
             "long_leg": long_leg, "short_leg": short_leg, "gross": long_leg + short_leg,
             "net": long_leg + short_leg - COSTS["single"] - COSTS["index"],
+            "cost_single_real": cost_s, "cost_index_real": cost_i, "listed_cov": listed_cov,
+            "net_real": long_leg + short_leg - cost_s - cost_i,
             "approx_gross": float(ww @ a_m) - float(a_i[0]),
             "iv_spx": iv_i, "iv_members_avg": float(ww @ w["iv"].values),
         })
@@ -142,4 +174,5 @@ if __name__ == "__main__":
         df = build(data_dir, n)
         df.to_pickle(Path(data_dir) / f"simple_dispersion_{name}.pkl")
         print(name, len(df), "tranches")
-        print(df[["long_leg", "short_leg", "gross", "net", "approx_gross"]].describe().round(2).to_string())
+        print(df[["long_leg", "short_leg", "gross", "net", "net_real", "cost_single_real",
+                  "cost_index_real", "listed_cov"]].describe().round(2).to_string())

@@ -97,26 +97,34 @@ def main(data_dir: str, raw_dir: str, res_dir: str) -> None:
     lines = []
 
     # 1. performance
-    for label, df, col in [("TOP-50 basket, net of costs", top, "net"), ("TOP-50 basket, gross", top, "gross"),
-                           ("All members, net of costs", allm, "net"),
+    for label, df, col in [("TOP-50 basket, net of measured listed costs", top, "net_real"),
+                           ("TOP-50 basket, net of flat desk costs (0.50 + 0.15)", top, "net"),
+                           ("TOP-50 basket, gross", top, "gross"),
+                           ("All members, net of measured listed costs", allm, "net_real"),
                            ("Short SPX straddle leg alone (gross)", top, "short_leg"),
                            ("Long single-stock leg alone (gross)", top, "long_leg")]:
         tab = summary_table(df, col)
         lines.append(f"## {label}\n{tab.round(2).to_string()}")
-        if label.startswith("TOP-50 basket, net"):
+        if label.startswith("TOP-50 basket, net of measured"):
             tab.round(3).to_csv(res / "simple_dispersion_performance.csv")
     # cost sensitivity
     cs = []
-    for mult in [0, 0.5, 1, 2, 3]:
-        x = top["gross"] - mult * (COSTS["single"] + COSTS["index"])
+    real = top["cost_single_real"] + top["cost_index_real"]
+    for mult in [0, 0.5, 1, 1.5, 2, 3]:
+        x = top["gross"] - mult * real
         cs.append({"cost multiple": mult, "mean": x.mean(), "Sharpe": sharpe_nonoverlap(x)})
-    lines.append("## Cost sensitivity (TOP-50; 1x = 0.50 single + 0.15 index vol pts half-spread)\n" + pd.DataFrame(cs).round(2).to_string(index=False))
+    lines.append("## Cost sensitivity (TOP-50; 1x = measured half-spreads of the listed straddles at entry)\n" + pd.DataFrame(cs).round(2).to_string(index=False))
+    per = pd.cut(top.index.year, [1995, 2000, 2007, 2009, 2019, 2025],
+                 labels=["1996-2000", "2001-2007", "2008-2009", "2010-2019", "2020-2025"])
+    ct = top.groupby(per, observed=True)[["cost_single_real", "cost_index_real", "listed_cov"]].mean()
+    lines.append("## Measured entry half-spreads, vol pts (single = index-weighted basket; listed_cov = weight share with a listed quote)\n"
+                 + ct.round(2).to_string())
     lines.append(f"## Exact delta-hedged P&L vs 'vega x (RV-IV)' approximation: corr {top['gross'].corr(top['approx_gross']):.3f}, "
                  f"mean gap {(top['gross'] - top['approx_gross']).mean():.2f} vol pts")
 
     # 2. factor regressions
     F = window_factors(top, ff, spx)
-    y = top["net"]
+    y = top["net_real"]
     specs = {"CAPM": ["mktrf"], "FF5 + momentum": ["mktrf", "smb", "hml", "rmw", "cma", "umd"],
              "FF5 + momentum + dVIX": ["mktrf", "smb", "hml", "rmw", "cma", "umd", "dVIX"],
              "Short SPX vol only": ["short_leg"],
@@ -162,7 +170,7 @@ def main(data_dir: str, raw_dir: str, res_dir: str) -> None:
     # 4. figures
     ex = top.set_index("exit")
     fig, ax = plt.subplots(figsize=(9, 4.5))
-    for col, lab in [("net", "Dispersion (net)"), ("short_leg", "Short SPX straddles (gross)"), ("long_leg", "Long single-stock straddles (gross)")]:
+    for col, lab in [("net_real", "Dispersion (net of measured costs)"), ("short_leg", "Short SPX straddles (gross)"), ("long_leg", "Long single-stock straddles (gross)")]:
         ax.plot(ex.index, ex[col].cumsum() / 3, label=lab)
     ax.axhline(0, color="grey", lw=0.6)
     ax.set_title("Monthly ladder of 3-month vega-neutral dispersion tranches (each 1/3 of vega)")
@@ -172,7 +180,7 @@ def main(data_dir: str, raw_dir: str, res_dir: str) -> None:
     fig.savefig(res / "fig_simple_dispersion_cumulative.png", dpi=150)
 
     fig, ax = plt.subplots(figsize=(5.5, 4.5))
-    ax.scatter(top["short_leg"], top["net"], s=10, alpha=0.6)
+    ax.scatter(top["short_leg"], top["net_real"], s=10, alpha=0.6)
     ax.axhline(0, color="grey", lw=0.6); ax.axvline(0, color="grey", lw=0.6)
     ax.set_xlabel("Short SPX straddle P&L (vol pts)")
     ax.set_ylabel("Dispersion net P&L (vol pts)")
