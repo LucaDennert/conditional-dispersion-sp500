@@ -6,7 +6,7 @@
 
 ## 0. Il tuo ruolo e le regole non negoziabili
 
-Lavori con **Luca Dennert**, studente MSc Finance in Bocconi. Il progetto è un paper di ricerca, condotto con un gruppo di studenti del secondo anno di triennale. Il codice va pubblicato su GitHub. Luca scrive in italiano e vuole risposte in italiano, chiare per un trader di desk ma rigorose per un quant.
+Lavori con **Luca**, autore del repository. Il progetto è un paper di ricerca, con codice pubblicato su GitHub. Luca scrive in italiano e vuole risposte in italiano, chiare per un trader di desk ma rigorose per un quant. Conosce bene le opzioni dal lato del desk.
 
 Regole:
 
@@ -70,7 +70,7 @@ Decisioni ancora aperte, spettano a Luca: formato del paper (LaTeX/Overleaf oppu
 
 Servono anche le **superfici di volatilità dei membri** (`vsurfd`), per gli strike model-free dei variance swap sui titoli e per la robustezza alla Linders-Schoutens.
 
-**Come ottenerli.** Il modulo web non basta: il limite è di 4.096 caratteri di codici e non ci sono filtri su strike o scadenza relativi allo spot. Serve **Python sul WRDS JupyterHub** (wrds-jupyter.wharton.upenn.edu) con un account WRDS personale. Il notebook è `notebooks/01_estrazione_ivydb_us.ipynb`. **Non è ancora mai stato eseguito**: lancia prima le celle 1–3 (elenco tabelle, colonne, secid di SPX/VIX e data finale) e correggi i nomi se non tornano. Procedura in due passi:
+**Come ottenerli.** Il modulo web non basta: il limite è di 4.096 caratteri di codici e non ci sono filtri su strike o scadenza relativi allo spot. Serve **Python sul WRDS JupyterHub** (wrds-jupyter.wharton.upenn.edu) con l'account WRDS personale di Luca, ora attivo. Il notebook è `notebooks/01_estrazione_ivydb_us.ipynb`. **Non è ancora mai stato eseguito**: lancia prima le celle 1–3 (elenco tabelle, colonne, secid di SPX/VIX e data finale) e correggi i nomi se non tornano. Procedura in due passi:
 - **Passo A.** In ogni data d'ingresso (primo giorno di borsa del mese), per SPX e per i top-50 per capitalizzazione del mese precedente, si sceglie lo straddle con scadenza mensile standard più vicina a 91 giorni (tra 60 e 130) e strike più vicino allo spot, con call e put entrambe quotate (bid > 0, ask > bid). A parità, si prende lo spread minore.
 - **Passo B.** Storia giornaliera di quei `optionid`, dall'ingresso alla scadenza.
 

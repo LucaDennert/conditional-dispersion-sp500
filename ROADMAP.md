@@ -45,4 +45,4 @@ Intermediate files are pickles: this environment has no parquet engine.
   - Downloads can stay as hidden temp files in Downloads: check them with `gzip -t`.
   - The library account is shared, so other users' queries appear in the query list.
 - **IvyDB US** covers 1996-01-04 to 2025-08-29. IvyDB Europe is not licensed.
-- **Personal WRDS account**: required. Needed for Python/JupyterHub, i.e. for the listed-option extraction (`notebooks/01_estrazione_ivydb_us.ipynb`, two-step contract selection).
+- **Personal account**: active since 2026-11-13. Needed for Python/JupyterHub, i.e. for the listed-option extraction (`notebooks/01_estrazione_ivydb_us.ipynb`, two-step contract selection).
