@@ -1,0 +1,28 @@
+## Unconditional listed-contract tranches: decomposition, vol pts per tranche
+             gross  g_long  g_short  cost_rt  hedge_costs   net  tranches
+1996-2000     4.97    2.63     2.34     2.70         0.33  1.94        59
+2001-2007     0.29   -1.65     1.95     2.03         0.25 -1.98        84
+2008-2010     0.62   -1.38     2.00     2.02         0.23 -1.66        36
+2011-2019     0.75   -0.72     1.47     1.22         0.21 -0.68       108
+2020-2025     0.74    0.63     0.11     1.05         0.19 -0.50        68
+Full sample   1.33   -0.19     1.52     1.70         0.24 -0.62       355
+
+## Tranche P&L on CP, estimation (168 tranches)
+net:
+       const -1.0833  (se 0.8870, t -1.22)
+          cp  4.7463  (se 6.4910, t  0.73)
+R2 = 0.007   RMSE = 4.2568
+gross:
+       const  1.1168  (se 0.9235, t  1.21)
+          cp  7.9426  (se 7.0827, t  1.12)
+R2 = 0.019   RMSE = 4.3461
+
+## Tranche P&L on CP, test (176 tranches)
+net:
+       const -0.7645  (se 0.2799, t -2.73)
+          cp  2.4558  (se 3.0726, t  0.80)
+R2 = 0.005   RMSE = 1.9858
+gross:
+       const  0.4227  (se 0.2779, t  1.52)
+          cp  5.0830  (se 2.9516, t  1.72)
+R2 = 0.023   RMSE = 1.9728

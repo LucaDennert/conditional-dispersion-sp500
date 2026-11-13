@@ -1,0 +1,83 @@
+## estimation
+                                       tranches  avg_vega  mean_month  sharpe  max_dd    hit  long_leg  short_leg  sharpe_diff_vs_bench  p_boot  dd_ratio
+strategy                                                                                                                                                 
+Unconditional (every month), unscaled       179     1.032      -0.203  -0.417   79.82  0.413    -109.1       72.6                   NaN     NaN       NaN
+Primary (k=0.5, VIX filter)                  33     0.190       0.034   0.211    7.39  0.474     -15.1       21.2                 0.629  0.0432     0.502
+V1 CP filter only                            44     0.251       0.034   0.180    8.80  0.463     -34.1       40.2                 0.598  0.0345     0.453
+V2 primary + VP>0                            32     0.184       0.040   0.251    6.28  0.491     -14.7       21.9                 0.669  0.0307     0.441
+V3 primary + stops                           33     0.164       0.003   0.017    9.47  0.490     -14.0       14.5                 0.434  0.1503     0.748
+V4 long leg x sqrt(IC)                       33     0.190       0.057   0.363    6.96  0.491     -11.0       21.2                 0.780  0.0193     0.473
+V5 top-30 basket                             33     0.190       0.023   0.137    8.03  0.456     -17.1       21.2                 0.522  0.0836     0.563
+V6 costs doubled                             33     0.190      -0.132  -0.758   24.11  0.333     -36.0       12.3                 1.423  0.0009     0.702
+V7 continuous sizing                         66     0.255       0.009   0.054    8.19  0.441     -26.7       28.4                 0.471  0.0871     0.416
+P4 ridge (final trade)                       27     0.118       0.098   0.663    2.15  0.593       2.7       14.9                 1.081  0.0000     0.235
+P4 gradient boosting                         48     0.181       0.290   1.234    0.84  0.703      32.6       19.6                 1.652  0.0000     0.060
+
+## test
+                                       tranches  avg_vega  mean_month  sharpe  max_dd    hit  long_leg  short_leg  sharpe_diff_vs_bench  p_boot  dd_ratio
+strategy                                                                                                                                                 
+Unconditional (every month), unscaled       176     1.006      -0.203  -0.718   36.42  0.375     -63.4       27.7                   NaN     NaN       NaN
+Primary (k=0.5, VIX filter)                  13     0.077      -0.024  -0.474    5.35  0.333      -8.9        4.6                 0.244  0.1939     1.909
+V1 CP filter only                            19     0.112      -0.028  -0.341    7.05  0.382     -14.6        9.7                 0.377  0.0620     1.744
+V2 primary + VP>0                            12     0.072      -0.026  -0.529    5.08  0.300      -7.6        3.1                 0.189  0.2523     1.959
+V3 primary + stops                           13     0.061      -0.020  -0.457    4.67  0.289     -10.1        6.5                 0.261  0.1895     2.132
+V4 long leg x sqrt(IC)                       13     0.077      -0.011  -0.200    3.89  0.405      -6.5        4.6                 0.518  0.0563     1.390
+V5 top-30 basket                             13     0.077      -0.029  -0.540    6.09  0.366      -9.7        4.6                 0.084  0.3947     2.308
+V6 costs doubled                             13     0.077      -0.062  -0.867   10.97  0.310     -12.4        1.5                 1.329  0.0000     1.239
+V7 continuous sizing                         48     0.170      -0.030  -0.443    7.24  0.427     -10.8        5.5                 0.275  0.1331     1.179
+P4 ridge (final trade)                       12     0.050      -0.026  -0.464    4.54  0.225       1.2       -5.8                 0.254  0.1677     2.491
+P4 gradient boosting                         24     0.069      -0.015  -0.223    5.02  0.305      -0.8       -1.8                 0.495  0.0350     2.007
+
+## robustness_test
+                      tranches  avg_vega  mean_month  sharpe  max_dd    hit  long_leg  short_leg  sharpe_diff_vs_bench  p_boot  dd_ratio                                note
+strategy                                                                                                                                                                    
+Primary k=0                 48     0.283      -0.032  -0.300   10.51  0.417     -12.2        6.6                 0.418  0.0198     1.027                                 NaN
+Primary k=0.25              29     0.172      -0.025  -0.342    6.86  0.390      -6.2        1.9                 0.376  0.0778     1.105                                 NaN
+Primary k=0.5               13     0.077      -0.024  -0.474    5.35  0.333      -8.9        4.6                 0.244  0.1939     1.909                                 NaN
+Primary k=0.75               7     0.040      -0.010  -0.275    2.69  0.333      -8.5        6.7                 0.443  0.0681     1.841                                 NaN
+Primary k=1.0                2     0.010      -0.000  -0.016    0.60  0.429      -1.8        1.8                 0.703  0.0060     1.592                                 NaN
+P4 ridge m=p75               0       NaN         NaN     NaN     NaN    NaN       NaN        NaN                   NaN     NaN       NaN  m <= 0: rule degenerate, no trades
+P4 ridge m=p90              12     0.050      -0.026  -0.464    4.54  0.225       1.2       -5.8                 0.254  0.1677     2.491                                 NaN
+P4 ridge m=p100             12     0.016      -0.007  -0.370    1.27  0.225       1.5       -2.7                 0.348  0.1010     2.172                                 NaN
+P4 ridge lambda=31.6        17     0.076      -0.034  -0.501    6.77  0.327       5.2      -11.2                 0.217  0.1847     2.462                                 NaN
+P4 ridge lambda=316          4     0.011      -0.003  -0.177    0.95  0.400       3.1       -3.6                 0.541  0.0587     2.387                                 NaN
+
+## Part 4 ridge vs part-3 primary (test): Sharpe diff 0.010, one-sided p 0.4765
+
+## Deflated Sharpe (test, 10 trials)
+{
+ "Primary (k=0.5, VIX filter)": 0.001,
+ "V1 CP filter only": 0.0031,
+ "V2 primary + VP>0": 0.0004,
+ "V3 primary + stops": 0.0019,
+ "V4 long leg x sqrt(IC)": 0.0197,
+ "V5 top-30 basket": 0.0002,
+ "V6 costs doubled": 0.0,
+ "V7 continuous sizing": 0.0027,
+ "P4 ridge (final trade)": 0.0001,
+ "P4 gradient boosting": 0.0271
+}
+
+## Sharpe by sub-period (test)
+{
+ "Primary (k=0.5, VIX filter)": {
+  "2011-2014": -1.354,
+  "2015-2019": 0.208,
+  "2020-2025": 0.122
+ },
+ "P4 ridge (final trade)": {
+  "2011-2014": -0.659,
+  "2015-2019": -0.444,
+  "2020-2025": -0.59
+ },
+ "bench_unscaled": {
+  "2011-2014": -1.09,
+  "2015-2019": -0.843,
+  "2020-2025": -0.471
+ }
+}
+
+## Decision
+Primary: criteria 1=False, 2=False, 3=False, sign flip across k=False -> DROP
+Final trade (ridge): DROP
+Thresholds: c=0.0937, RMSE=0.0883, VIX80=26.82, VIX95=38.04
