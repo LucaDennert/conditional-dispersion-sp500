@@ -3,11 +3,8 @@
 
 \begin{abstract}
 \noindent
-We study the correlation risk premium on the S\&P~500 and the dispersion trade that harvests it, using OptionMetrics IvyDB US and CRSP data from January 1996 to August 2025. Implied correlation exceeds subsequently realized correlation in 80\% of months at the three-month horizon, by 8.5 correlation points on average ($t = 8.4$). A monthly ladder of vega-neutral, delta-hedged straddle dispersion tranches (short SPX, long the 50 largest members) earns 1.88 vol points per tranche before costs and 0.97 after half-spreads measured on listed options (annualized Sharpe ratio 0.56). The return is not explained by the market, Fama--French five factors, momentum or changes in VIX, and it is essentially uncorrelated with a short position in index volatility; its market beta is negative. The edge, however, is concentrated in 1996--2007 and in crisis periods, is not significant in 2010--2019, and vanishes at about twice the measured transaction costs. We then pre-register a conditional version of the trade, which opens a tranche only when implied correlation is rich relative to a HAR forecast of realized correlation, net of costs, and the volatility regime is calm. All parameters are estimated on 1996--2010 and frozen; the rule is tested once on 2011--2025 against a vega-matched unconditional benchmark.
+We study the correlation risk premium on the S\&P~500 and whether it can be harvested with a dispersion trade, using OptionMetrics IvyDB US and CRSP data from January 1996 to August 2025. Three-month implied correlation exceeds subsequently realized correlation in 80\% of months, by 8.5 correlation points on average ($t = 8.4$); about half of any increase in implied correlation is premium. A stylized monthly ladder of vega-neutral, delta-hedged straddle dispersion tranches held to expiry earns 0.97 vol points per tranche after entry spreads (Sharpe ratio 0.56), with an alpha that standard risk factors do not explain and a negative market beta. Implemented with the listed contracts a price-taker would actually trade (round-trip bid/ask, hedging costs, exit ten days before expiry), the same trade loses 0.62 vol points per tranche: gross gains of 1.33 do not cover 1.94 of costs. We then test, in a pre-registered design with parameters frozen on 1996--2010 and a single out-of-sample evaluation on 2011--2025, whether timing the trade helps: a rule that trades only when implied correlation is rich relative to a HAR forecast net of costs, and a final trade that forecasts tranche P\&L from eight signals with ridge regression and gradient boosting. Both rules pass the protocol's criteria in sample and both fail out of sample, and both are dropped. The correlation premium is real and large, but its level does not predict the P\&L of a tranche, which is dominated by realized gamma and by transaction costs.
 \end{abstract}
-
-\vspace{0.5em}
-\noindent\textbf{Status of this draft.} Sections~\ref{sec:premium} and~\ref{sec:standard} are complete. Section~\ref{sec:conditional} reports the pre-registered design and every quantity estimated on the estimation sample; its out-of-sample results are deliberately not yet computed. Section~\ref{sec:final} will describe the final trade, which is designed and pre-registered before the test of Section~\ref{sec:conditional} is run.
 
 \section{Introduction}
 
@@ -16,31 +13,101 @@ The variance of an index is the sum of its members' variances and covariances. O
 This paper asks three questions, all on the S\&P~500 over 1996--2025.
 \begin{enumerate}
   \item How large and how stable is the correlation risk premium? (Section~\ref{sec:premium})
-  \item Does a realistic dispersion trade earn it after transaction costs, and is the return compensation for exposure to standard risk factors? (Section~\ref{sec:standard})
-  \item Can timing the trade, opening it only when the premium is large relative to costs and to a forecast of realized correlation, improve its risk-adjusted return and limit its drawdowns? (Sections~\ref{sec:conditional} and~\ref{sec:final})
+  \item Does a dispersion trade earn it after transaction costs, and is its return compensation for exposure to standard risk factors? (Sections~\ref{sec:standard} and~\ref{sec:listed})
+  \item Can timing the trade, opening it only when the premium is large relative to costs and to a forecast of realized correlation, improve its risk-adjusted return and limit drawdowns? (Sections~\ref{sec:conditional} and~\ref{sec:final})
 \end{enumerate}
 
-Two features distinguish our approach. First, all trade P\&L is computed on actual price paths with exact daily delta hedging, and costs are measured on the listed contracts that would have been traded, rather than approximated by ``vega times realized minus implied volatility'' with assumed spreads. The approximation matters: its correlation with the exact P\&L is only 0.64. Second, the conditional trade is \emph{pre-registered}. Its data, definitions, trading rule, the way each parameter is chosen and the criteria that decide whether it is kept or dropped were committed to a public repository before any signal or P\&L was computed. Parameters are estimated on 1996--2010 and frozen; 2011--2025 is used once.
+\paragraph{Approach.} Two features distinguish this study. First, trade P\&L is computed on actual price paths with exact daily delta hedging, and in the main test on the listed contracts that would have been traded, with their own bid and ask on entry and exit. The usual shortcut, ``vega times realized minus implied volatility'' with assumed spreads, is too coarse for a trade whose edge is of the same size as its costs: its correlation with the exact P\&L is only 0.64. Second, the timing rules are \emph{pre-registered}. Data, definitions, trading rules, the way each parameter is chosen and the criteria that decide whether a rule is kept or dropped were committed to a public repository before any signal or P\&L was computed. Parameters were estimated on 1996--2010 and frozen; 2011--2025 was used once.
 
-All code is public.\footnote{\url{https://github.com/LucaDennert/conditional-dispersion-sp500}. The licensed data are not redistributed; the repository contains the extraction queries, the code and the aggregated results.}
+\paragraph{Findings.}
+\begin{itemize}
+  \item \textbf{The premium is large, persistent and partly predictable} from the level of implied correlation and from past realized correlation.
+  \item \textbf{A stylized dispersion trade earns it}: the short index leg collects about two vol points per three-month tranche, the long single-stock leg is roughly break-even, and the net return is not explained by market, size, value, profitability, investment, momentum or volatility factors.
+  \item \textbf{A price-taker does not.} Measured on listed contracts with round-trip costs, the unconditional trade loses money in both halves of the sample. Spreads on fifty single-stock straddles and an index straddle, paid twice, cost about 1.7 vol points per tranche, more than the premium the trade captures.
+  \item \textbf{Timing does not rescue it.} The correlation premium at entry explains less than 2\% of the variance of tranche P\&L. Both the pre-registered threshold rule and the machine-learning final trade look good in sample and fail out of sample; deflated Sharpe ratios are close to zero.
+\end{itemize}
+The lesson for a trading desk is that the correlation premium belongs to whoever can trade dispersion close to mid: market makers, or investors using variance or correlation swaps. For a price-taker, the binding constraint is execution, not signal.
+
+All code is public.\footnote{\url{https://github.com/LucaDennert/conditional-dispersion-sp500}. The licensed data are not redistributed; the repository contains the extraction code, the analysis code, the pre-registration and the aggregated results.}
+
+\section{Theory}\label{sec:theory}
+
+\subsection{Index variance and average correlation}
+
+Let the index return be $r_I = \sum_i w_i r_i$. Its variance is
+\begin{equation}\label{eq:var}
+  \sigma_I^2 = \sum_i w_i^2\sigma_i^2 + \sum_{i\neq j} w_i w_j \sigma_i\sigma_j\rho_{ij}.
+\end{equation}
+Replacing every pairwise correlation by a single average $\rho$ gives the average-correlation identity
+\begin{equation}\label{eq:avgcorr}
+  \sigma_I^2 = \Omega + \rho\,C,\qquad
+  \Omega = \sum_i w_i^2\sigma_i^2,\quad C = \Bigl(\sum_i w_i\sigma_i\Bigr)^2 - \Omega,
+  \qquad\Longrightarrow\qquad
+  \rho = \frac{\sigma_I^2 - \Omega}{C}.
+\end{equation}
+\emph{Implied correlation} (IC) plugs the implied volatilities of the index and of its members into~\eqref{eq:avgcorr}; \emph{realized correlation} (RC) plugs in realized volatilities. For the S\&P~500, $\Omega$ is small (about 2\% of $\sigma_I^2$), so $\sigma_I \approx \sqrt{\rho}\sum_i w_i\sigma_i$: the index volatility is the average member volatility scaled by the square root of the average correlation. On our sample the median ratio of index to average member implied volatility is 0.65, against $\sqrt{\text{IC}} = 0.64$.
+
+The identity gives the exchange rate between correlation and volatility that we use throughout. Holding member volatilities fixed,
+\begin{equation}\label{eq:dsig}
+  \frac{\partial\sigma_I}{\partial\rho} = \frac{C}{2\sigma_I}.
+\end{equation}
+At the sample medians ($C = 0.072$, $\sigma_I = 0.17$) one correlation point moves index volatility by about 0.21 vol points.
+
+\subsection{Why implied correlation should exceed realized correlation}
+
+Two complementary explanations predict a positive correlation risk premium.
+
+\paragraph{Risk.} Correlations rise in market downturns, exactly when diversification is most valuable. An asset that pays off when correlation rises, a long position in index variance against short member variance, hedges bad states, so investors accept a negative expected return on it. Equivalently, the seller of correlation earns a premium for bearing crash risk. \citet{DMV2009} show that this priced correlation risk accounts for most of the index variance risk premium, while individual variance risk premia are small.
+
+\paragraph{Demand.} Options are not in zero net supply for dealers. End users are structurally long index puts for portfolio protection, and structurally short single-stock calls through overwriting and yield-enhancement products. Dealers who absorb these flows charge for the inventory risk, which raises index implied volatility relative to members' \citep{BollenWhaley2004, GPP2009}. The steeper skew of index options relative to single stocks points in the same direction \citep{BKM2003}.
+
+Both explanations imply that the premium is larger when correlation risk is more salient. The risk story also implies that the premium should be earned with a negative return in crashes, which we test in Section~\ref{sec:standard}.
+
+\subsection{What a dispersion trade earns}
+
+A long option delta-hedged at its implied volatility $\Sigma$ earns, over a small interval,
+\begin{equation}\label{eq:gamma}
+  d\Pi \approx \tfrac12\,\Gamma S^2\bigl(r^2 - \Sigma^2\,dt\bigr),
+\end{equation}
+gamma times the gap between realized and implied variance. For an ATM option, cash gamma and vega are linked by $\Gamma S^2 = \nu/(\Sigma\tau)$, so over the life of the option the P\&L is approximately $\nu\,(\sigma^R - \Sigma)$ in vol points: vega times realized minus implied volatility. A vega-neutral dispersion tranche, long $w_i$ units of vega on each member and short one unit on the index, therefore earns approximately
+\begin{equation}\label{eq:disp}
+  \Pi \approx \underbrace{\sum_i w_i\bigl(\sigma_i^R - \Sigma_i\bigr)}_{\text{single-stock vol premium}}
+  \;-\; \underbrace{\bigl(\sigma_I^R - \Sigma_I\bigr)}_{\text{index vol premium}}.
+\end{equation}
+If member volatilities are priced fairly ($\sigma_i^R \approx \Sigma_i$), equations~\eqref{eq:avgcorr}--\eqref{eq:dsig} turn the second term into a correlation bet:
+\begin{equation}\label{eq:corrbet}
+  \Pi \approx \frac{C}{2\sigma_I}\bigl(\mathrm{IC} - \mathrm{RC}\bigr).
+\end{equation}
+With a three-month premium of 8.5 correlation points and $C/(2\sigma_I) \approx 0.21$, equation~\eqref{eq:corrbet} predicts about 1.8 vol points per tranche. The short SPX leg of Section~\ref{sec:standard} earns 2.1, and the long leg about zero, close to the prediction.
+
+\paragraph{Three caveats.} Equation~\eqref{eq:disp} is first order, and the departures from it matter.
+\begin{itemize}
+  \item \textbf{Path dependence.} Gamma is concentrated near the strike, so the realized P\&L depends on when large moves happen, not only on realized volatility. Single-stock jumps (earnings, takeovers) are where the long leg makes its money, and where the approximation is worst.
+  \item \textbf{Exposure to the volatility level.} Vega neutrality is not neutrality to the level of volatility. If all volatilities rise in proportion $x$ at fixed correlation, the long leg gains $x\sum_i w_i\sigma_i$ and the short leg loses $x\sigma_I < x\sum_i w_i\sigma_i$: the book is net long volatility, with sensitivity $\sum_i w_i\sigma_i - \sigma_I \approx (1 - \sqrt{\rho})\sum_i w_i\sigma_i$. This is why a vega-neutral dispersion book tends to make money in sell-offs even though correlation rises, and why it has a negative equity beta. Scaling the long leg by $\sqrt{\mathrm{IC}}$ (``correlation-weighted'' dispersion) removes this exposure to first order.
+  \item \textbf{Straddles versus variance.} Equation~\eqref{eq:gamma} holds for any strike, but a straddle loses gamma as the spot moves away from the strike, while a variance swap keeps constant dollar-gamma. A straddle dispersion trade is a correlation bet only for moderate moves.
+\end{itemize}
+
+\subsection{Costs in correlation units}
+
+A round-trip cost of $\kappa$ vol points per unit of vega must be paid by the index mispricing. By~\eqref{eq:dsig}, the correlation premium needed to break even is
+\begin{equation}\label{eq:cost}
+  c = \frac{\kappa}{100}\cdot\frac{2\sigma_I}{C}.
+\end{equation}
+Equation~\eqref{eq:cost} is the bridge between what a trader sees, spreads in vol points, and what the signal measures, correlation points. It is also the source of our main negative result: on 1996--2010 the round-trip cost of a tranche of listed straddles was 2.25 vol points, which by~\eqref{eq:cost} is 9.4 correlation points, more than the average premium.
+
+\subsection{Hypotheses}
+
+The theory suggests a conditional strategy. If the premium IC $-$ E[RC] varies over time and can be estimated at entry, a trader should sell correlation only when the estimated premium exceeds the cost~\eqref{eq:cost} by a margin that reflects forecast error. Since the premium is a compensation for crash risk, the trader should also avoid selling it when the volatility regime is already stressed. These are the two filters of the pre-registered rule (Section~\ref{sec:conditional}). The alternative, null hypothesis is that the P\&L of a tranche is dominated by the realized path (equation~\eqref{eq:gamma}) and that the premium at entry, although positive on average, carries little information about any single tranche.
 
 \section{Data and definitions}\label{sec:data}
 
-\paragraph{Sources.} Option data come from OptionMetrics IvyDB US (via WRDS): standardized options (91- and 30-day ATM-forward implied volatilities, \texttt{stdopd}), the 91-day volatility surface on a delta grid (\texttt{vsurfd}), listed option prices with bid, ask and greeks (\texttt{opprcd}), security prices (\texttt{secprd}) and the zero-coupon curve (\texttt{zerocd}). S\&P~500 membership, market capitalization and daily returns come from CRSP; members are linked to OptionMetrics through the WRDS link table (score~1). Fama--French factors and momentum come from WRDS. The sample runs from 4~January 1996 to 29~August 2025.
+\paragraph{Sources.} Option data come from OptionMetrics IvyDB US (via WRDS): standardized options (30- and 91-day ATM-forward implied volatilities), the 91-day volatility surface on a delta grid, listed option prices with bid, ask and greeks, security prices and the zero-coupon curve. S\&P~500 membership, market capitalization and daily returns come from CRSP; members are linked to OptionMetrics through the WRDS link table (score~1). Fama--French factors and momentum come from WRDS. The sample runs from 4~January 1996 to 29~August 2025.
 
-\paragraph{Dates and weights.} Signals are computed and trades opened on the first trading day of each month. The weight $w_i$ of member $i$ is its CRSP market capitalization at the previous month end divided by the total over members with valid data.
-
-\paragraph{Implied and realized correlation.} With index volatility $\sigma_I$ and member volatilities $\sigma_i$, the average correlation $\rho$ is the single pairwise correlation that reproduces the index variance:
-\begin{equation}\label{eq:avgcorr}
-  \sigma_I^2 = \sum_i w_i^2\sigma_i^2 + \rho\sum_{i\neq j} w_i w_j \sigma_i\sigma_j
-  \quad\Longrightarrow\quad
-  \rho = \frac{\sigma_I^2 - \sum_i w_i^2\sigma_i^2}{\bigl(\sum_i w_i\sigma_i\bigr)^2 - \sum_i w_i^2\sigma_i^2}.
-\end{equation}
-\emph{Implied correlation} (IC) uses ATM-forward implied volatilities of the index and of all members; \emph{realized correlation} (RC) uses annualized realized volatilities of daily log returns. We write IC$_h$ for maturity $h$ (30 or 91 days) and RC$_n$ for a window of $n$ trading days.
+\paragraph{Conventions.} Signals are computed and trades opened on the first trading day of each month. The weight $w_i$ of a member is its CRSP market capitalization at the previous month end, normalized over members with valid data. IC uses ATM-forward implied volatilities of the index and of all members; RC uses annualized realized volatilities of daily log returns. IC$_h$ denotes maturity $h$ (1 or 3 months) and RC$_n$ a window of $n$ trading days.
 
 \section{The correlation risk premium, 1996--2025}\label{sec:premium}
 
-We compare implied correlation on each entry date with the correlation realized over the life of the options: IC$_{91}$ against RC over the following 63 trading days, and IC$_{30}$ against RC over the following 21 days. Figure~\ref{fig:premium} shows the two series and Table~\ref{tab:premium} summarizes them.
+We compare implied correlation on each entry date with the correlation realized over the life of the options: three-month IC against RC over the following 63 trading days, and one-month IC against the following 21 days (Figure~\ref{fig:premium}, Table~\ref{tab:premium}).
 
 \begin{figure}[t]
   \centering
@@ -74,35 +141,30 @@ We compare implied correlation on each entry date with the correlation realized 
 
 \paragraph{Findings.}
 \begin{itemize}
-  \item \textbf{The premium is large and persistent.} At three months, implied correlation exceeds realized correlation by 8.5 points on average and in 80\% of months. It is positive and significant in every sub-period, although it has roughly halved since 2020.
-  \item \textbf{It is larger at three months than at one.} The one-month premium is 5.1 points and is not significant in 2020--2025.
-  \item \textbf{It is higher when volatility is higher.} Sorting months by VIX terciles, the three-month premium is 4.0 points in the low tercile and 10--11 points in the middle and high terciles. Regressing the premium on the level of implied correlation gives a slope of 0.51 ($t = 6.5$, $R^2 = 0.23$): when implied correlation is high, about half of it is premium.
+  \item \textbf{The premium is large and persistent.} At three months, implied correlation exceeds realized correlation by 8.5 points on average and in 80\% of months. It is positive and significant in every sub-period, though it has roughly halved since 2020.
+  \item \textbf{It is larger at three months than at one.} The one-month premium is 5.1 points and not significant in 2020--2025. A term structure of this kind is what the risk explanation predicts: a three-month option carries more exposure to a correlation spike than a one-month option.
+  \item \textbf{It is higher when volatility is higher.} By VIX terciles, the three-month premium is 4.0 points in the low tercile and 10--11 in the middle and high terciles. Regressing the premium on the level of IC gives a slope of 0.51 ($t = 6.5$, $R^2 = 0.23$): when implied correlation rises, about half of the rise is premium, not expected correlation.
 \end{itemize}
-The last point is the starting idea of the conditional trade: the premium is predictable, at least in part, from quantities observed on the trade date.
 
-\section{The unconditional dispersion trade}\label{sec:standard}
+\paragraph{Discussion.} The predictability in the last point is the starting idea of the conditional trade. Two remarks qualify it. First, a premium that rises with IC is partly mechanical: realized correlation mean-reverts, and IC observed at a peak overstates future RC even if no risk premium exists. A forecast that conditions on past RC, as in Section~\ref{sec:conditional}, separates the two. Second, in correlation units the premium looks large, but by equation~\eqref{eq:dsig} 8.5 correlation points are worth only about 1.8 vol points on the index, which is the scale on which costs are paid.
+
+\section{The stylized dispersion trade}\label{sec:standard}
 
 \subsection{Construction}
 
-On the first trading day of every month we open a three-month tranche:
-\begin{itemize}
-  \item \textbf{short} an ATM-forward straddle on SPX;
-  \item \textbf{long} ATM-forward straddles on the 50 largest members, with vega allocated by index weight;
-  \item \textbf{vega-neutral}: the two legs carry the same vega.
-\end{itemize}
-Each straddle is delta-hedged daily and held to expiry (63 trading days), so three tranches are live at any time. The trade is long the dispersion of member volatilities around the index: it gains when realized correlation is below the correlation priced into the index.
+On the first trading day of every month we open a three-month tranche: \textbf{short} an ATM-forward straddle on SPX, and \textbf{long} ATM-forward straddles on the 50 largest members, with vega allocated by index weight. The two legs carry the same vega. Each straddle is delta-hedged daily and held to expiry (63 trading days), so three tranches are live at any time. This is the textbook version of the trade, which we use to measure the premium a dispersion book is exposed to; Section~\ref{sec:listed} implements it on listed contracts.
 
-\paragraph{Exact P\&L.} Entry prices are Black--Scholes prices at the market implied volatility (91-day ATM-forward). The hedge and the payoff are computed on the actual price paths (CRSP for members, including dividends; SPX with dividends at the yield implied by the 91-day forward). With spot normalized to one, strike $K = e^{(r-q)T}$, and $V_t$, $\Delta_t$ the Black--Scholes straddle value and delta at the inception volatility, the P\&L of a long hedged straddle is
+\paragraph{Exact P\&L.} Entry prices are Black--Scholes prices at the market's 91-day ATM-forward implied volatility. Hedge and payoff are computed on actual price paths (CRSP for members, with dividends; SPX with dividends at the yield implied by the 91-day forward). With spot normalized to one, strike $K = e^{(r-q)T}$, and $V_t$, $\Delta_t$ the Black--Scholes straddle value and delta at the inception volatility, the P\&L of a long hedged straddle is
 \begin{equation}\label{eq:pnl}
   \Pi = |S_T - K| - V_0 - \sum_{t=0}^{T-1}\Delta_t S_t R_{t+1} - \sum_{t=0}^{T-1} r\,(V_t - \Delta_t S_t)\,\delta t,
 \end{equation}
-where $R_{t+1}$ is the total return of the underlying and $r$ is the 91-day zero rate. We express $\Pi$ in vol points per unit of initial vega, so that legs are comparable and the tranche P\&L is $\sum_i \tilde w_i \Pi_i/\nu_i - \Pi_I/\nu_I$, with $\tilde w_i$ the weights renormalized within the basket. For a book with \$100{,}000 of vega per leg, one vol point is \$100{,}000 per tranche.
+where $R_{t+1}$ is the total return of the underlying. We express $\Pi$ in vol points per unit of initial vega, so the tranche P\&L is $\sum_i \tilde w_i \Pi_i/\nu_i - \Pi_I/\nu_I$. For a book with \$100{,}000 of vega per leg, one vol point is \$100{,}000 per tranche.
 
-\paragraph{Measured costs.} On each entry date we select, for SPX and for each of the 50 names, the standard monthly listed straddle closest to 91 days and to the spot strike, with both legs quoted, choosing the tightest spread when several qualify. The half-spread in vol points is $(\text{spread}_C + \text{spread}_P)/2$ divided by the straddle vega. The basket cost is index-weighted; names with no listed quote on that date take the basket median. Since straddles are held to expiry, only the entry half-spread is paid. Table~\ref{tab:costs} reports the result.
+\paragraph{Costs.} Half bid/ask spreads are measured, on each entry date, on the listed straddle closest to three months and to the spot strike, for SPX and for each name; the basket cost is index-weighted (Table~\ref{tab:costs}). Since straddles are held to expiry, only the entry half-spread is paid.
 
 \begin{table}[t]
   \centering
-  \caption{Measured entry half-spreads of three-month near-ATM listed straddles, vol points per unit of vega. ``Coverage'' is the share of basket weight with a listed contract on the entry date.}
+  \caption{Measured entry half-spreads of three-month near-ATM listed straddles, vol points per unit of vega. ``Coverage'' is the share of basket weight with a listed contract near three months on the entry date.}
   \label{tab:costs}
   \begin{tabular}{lrrr}
     \toprule
@@ -123,7 +185,7 @@ Spreads fell with decimalization (2001) and the penny pilot (from 2007). Coverag
 
 \begin{table}[t]
   \centering
-  \caption{Unconditional dispersion trade, top-50 basket, net of measured costs. P\&L in vol points per tranche. $t$-statistics are Newey--West; Sharpe ratios are annualized from non-overlapping tranches.}
+  \caption{Stylized dispersion trade, top-50 basket, net of entry spreads. P\&L in vol points per tranche. $t$-statistics are Newey--West; Sharpe ratios are annualized from non-overlapping tranches.}
   \label{tab:perf}
   \begin{tabular}{lrrrrrrr}
     \toprule
@@ -142,21 +204,20 @@ Spreads fell with decimalization (2001) and the penny pilot (from 2007). Coverag
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.9\textwidth]{figures/fig_simple_dispersion_cumulative.png}
-  \caption{Cumulative P\&L of the monthly ladder (each tranche one-third of the vega budget): dispersion net of measured costs, and the two legs gross of costs.}
+  \caption{Stylized trade: cumulative P\&L of the monthly ladder (each tranche one-third of the vega budget), dispersion net of entry spreads and the two legs gross of costs.}
   \label{fig:cum}
 \end{figure}
 
-Table~\ref{tab:perf} and Figure~\ref{fig:cum} summarize the results.
 \begin{itemize}
-  \item \textbf{The trade is profitable after costs over the full sample}: 0.97 vol points per tranche ($t = 3.8$), Sharpe ratio 0.56. Gross of costs the mean is 1.88 and the Sharpe ratio 1.05. Using all members instead of the top 50 changes little (0.92, Sharpe 0.57).
-  \item \textbf{The index leg earns the money.} Short SPX straddles earn $+2.14$ vol points per tranche, the index variance risk premium \citep{BakshiKapadia2003, CarrWu2009}. Long single-stock straddles lose $-0.26$, close to zero: single-stock implied volatility is approximately fair.
-  \item \textbf{The edge is concentrated.} It comes from 1996--2007 and from the 2020s. In 2010--2019 the net mean is 0.33 vol points and not significant.
-  \item \textbf{Costs are first order.} Break-even is at about twice the measured spreads (Table~\ref{tab:costsens}).
+  \item \textbf{The trade is profitable over the full sample} (Table~\ref{tab:perf}, Figure~\ref{fig:cum}): 0.97 vol points per tranche after entry spreads ($t = 3.8$), Sharpe ratio 0.56. Gross of costs, 1.88 and 1.05. Using all members instead of the top 50 changes little (0.92, Sharpe 0.57).
+  \item \textbf{The index leg earns the money.} Short SPX straddles earn $+2.14$ vol points per tranche, the index variance risk premium \citep{BakshiKapadia2003, CarrWu2009}; long single-stock straddles lose $-0.26$, close to zero. This is the decomposition predicted by equation~\eqref{eq:disp} and by \citet{DMV2009}.
+  \item \textbf{The edge is concentrated.} It comes from 1996--2007 and the 2020s. In 2010--2019 the net mean is 0.33 vol points and not significant.
+  \item \textbf{Costs are first order.} Break-even is at about twice the measured entry spreads (Table~\ref{tab:costsens}).
 \end{itemize}
 
 \begin{table}[t]
   \centering
-  \caption{Sensitivity to transaction costs (top-50 basket, full sample). $1\times$ = measured half-spreads.}
+  \caption{Sensitivity to transaction costs (stylized trade, full sample). $1\times$ = measured entry half-spreads.}
   \label{tab:costsens}
   \begin{tabular}{lrrrrrr}
     \toprule
@@ -170,7 +231,7 @@ Table~\ref{tab:perf} and Figure~\ref{fig:cum} summarize the results.
 
 \subsection{Is it a risk-factor bet?}
 
-We regress the net P\&L of each tranche on the factor returns summed over the tranche's life: the market, the five Fama--French factors \citep{FamaFrench2015}, momentum \citep{Carhart1997}, the change in VIX, and the P\&L of the short SPX straddle. Standard errors are Newey--West with two lags \citep{NeweyWest1987}, since consecutive tranches overlap.
+We regress the net P\&L of each tranche on factor returns summed over its life: the market, the five Fama--French factors \citep{FamaFrench2015}, momentum \citep{Carhart1997}, the change in VIX, and the P\&L of the short SPX straddle. Standard errors are Newey--West with two lags \citep{NeweyWest1987}, since consecutive tranches overlap.
 
 \begin{table}[t]
   \centering
@@ -190,41 +251,71 @@ We regress the net P\&L of each tranche on the factor returns summed over the tr
 \end{table}
 
 \begin{itemize}
-  \item \textbf{Alpha survives every specification} (Table~\ref{tab:factors}), and standard factors explain at most a fifth of the variance.
-  \item \textbf{Market beta is negative} ($-0.16$, $t = -4.3$ in the CAPM). A vega-neutral book is net long the \emph{level} of volatility, because single-stock volatilities move more in points than index volatility. This offsets the rise in correlation in sell-offs, which is why the 2008 and 2020 tranches were profitable.
-  \item \textbf{It is not short index volatility in disguise}: the tranche P\&L is essentially uncorrelated with the short SPX straddle ($R^2 = 0.01$, Figure~\ref{fig:scatter}).
+  \item \textbf{Alpha survives every specification} (Table~\ref{tab:factors}); standard factors explain at most a fifth of the variance.
+  \item \textbf{Market beta is negative} ($-0.16$, $t = -4.3$ in the CAPM). This is the volatility-level exposure derived in Section~\ref{sec:theory}: a vega-neutral book is net long volatility, which offsets the rise in correlation in sell-offs. The 2008 and 2020 tranches were profitable. A pure correlation seller would have lost in both.
+  \item \textbf{It is not short index volatility in disguise}: tranche P\&L is essentially uncorrelated with the short SPX straddle ($R^2 = 0.01$, Figure~\ref{fig:scatter}).
 \end{itemize}
+
+\paragraph{Discussion.} The negative beta qualifies the risk interpretation of Section~\ref{sec:theory}. The \emph{premium} is compensation for correlation risk, but a vega-neutral \emph{trade} does not carry that risk in its crude form, because its long volatility exposure hedges the crash. What remains is a return with little systematic exposure, which is why the alpha is large relative to the factor loadings. Whether a price-taker can capture it is the question of the next section.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.55\textwidth]{figures/fig_dispersion_vs_short_vol.png}
-  \caption{Dispersion P\&L against the P\&L of the short SPX straddle, per tranche.}
+  \caption{Stylized trade: dispersion P\&L against the P\&L of the short SPX straddle, per tranche.}
   \label{fig:scatter}
 \end{figure}
 
-\subsection{Straddles versus variance swaps}
+\subsection{Two technical remarks}
 
-The three-month model-free variance-swap strike of SPX \citep{BrittenJonesNeuberger2000}, computed from the IvyDB volatility surface in the same way as the VIX, averages 20.3 against 18.6 for ATM volatility. A short SPX variance swap struck at the model-free strike earns $+1.7$ vol points per tranche; struck at ATM volatility it would earn about zero. A variance-swap version of the dispersion trade therefore needs model-free strikes on both legs, which we compute from the member volatility surfaces in a robustness check. The straddle version is not affected, because straddles are priced at ATM volatility.
+\paragraph{Straddles versus variance swaps.} The three-month model-free variance-swap strike of SPX \citep{BrittenJonesNeuberger2000} averages 20.3 against 18.6 for ATM volatility. A short SPX variance swap struck at the model-free strike earns $+1.7$ vol points per tranche; struck at ATM volatility it would earn about zero. A variance-swap dispersion trade therefore needs model-free strikes on both legs, and the steeper index skew is part of what it earns. The straddle version is not affected, because straddles are priced at ATM volatility.
 
-\subsection{Exact P\&L versus the usual approximation}
+\paragraph{Exact P\&L versus the shortcut.} Across tranches, ``vega times realized minus implied volatility'' has a correlation of only 0.64 with the exact P\&L of equation~\eqref{eq:pnl}. The shortcut ignores the path dependence of gamma, which is largest exactly for the jumps that drive single-stock P\&L.
 
-A common shortcut values a delta-hedged option as vega times realized minus implied volatility. Across our tranches its correlation with the exact P\&L of equation~\eqref{eq:pnl} is 0.64, with a mean gap of $-0.24$ vol points. Gamma is path dependent and concentrated near the strike, and large moves, which drive the dispersion P\&L, are where the shortcut fails.
+\section{The trade on listed contracts}\label{sec:listed}
+
+The stylized trade makes three simplifications in the trader's favour. It enters at the standardized ATM-forward volatility rather than at a traded price, pays only the entry spread because it holds to expiry, and ignores hedging costs. The pre-registered implementation removes all three.
+
+\paragraph{Engine.} On each entry date we select, for SPX and for each of the top 50 members, the standard monthly expiry closest to 91 days (between 60 and 130) and the strike closest to spot with both call and put quoted, choosing the tighter spread when several qualify. We buy at the ask and sell at the bid, mark daily at mid, hedge daily with IvyDB deltas (index hedge as a futures proxy), pay 0.5\,bp (index) or 1\,bp (stocks) on the traded hedge notional, finance at the zero curve, and exit ten trading days before expiry at bid/ask. A straddle with no quote is carried forward for at most three days and then closed. When a stock splits, IvyDB keeps the option identifier and rescales the strike, and we rescale prices and deltas accordingly. P\&L is per unit of SPX vega at entry, with long-leg vega split by index weight among the names traded.
+
+\begin{table}[t]
+  \centering
+  \caption{Unconditional tranches on listed contracts: decomposition of P\&L per tranche, vol points per unit of vega. ``Spreads'' are entry plus exit half-spreads on both legs; ``hedging'' is the cost of delta rebalancing.}
+  \label{tab:decomp}
+  \begin{tabular}{lrrrrrrr}
+    \toprule
+    Period & Tranches & Gross & Long leg & Short leg & Spreads & Hedging & Net \\
+    \midrule
+    1996--2000 &  59 & 4.97 &  2.63 & 2.34 & 2.70 & 0.33 &  1.94 \\
+    2001--2007 &  84 & 0.29 & $-1.65$ & 1.95 & 2.03 & 0.25 & $-1.98$ \\
+    2008--2010 &  36 & 0.62 & $-1.38$ & 2.00 & 2.02 & 0.23 & $-1.66$ \\
+    2011--2019 & 108 & 0.75 & $-0.72$ & 1.47 & 1.22 & 0.21 & $-0.68$ \\
+    2020--2025 &  68 & 0.74 &  0.63 & 0.11 & 1.05 & 0.19 & $-0.50$ \\
+    \midrule
+    Full sample & 355 & 1.33 & $-0.19$ & 1.52 & 1.70 & 0.24 & $-0.62$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Results.} Table~\ref{tab:decomp} shows the result.
+\begin{itemize}
+  \item \textbf{Gross of costs the trade still works}, with the same anatomy as the stylized version: the short index leg earns 1.5 vol points per tranche and the long leg about zero. Gross P\&L is lower than in the stylized trade (1.33 against 1.88) mainly because the position is closed ten days early, giving up the last part of the index theta.
+  \item \textbf{Costs exceed the gross edge.} Spreads paid on entry \emph{and} exit average 1.70 vol points per tranche, and hedging another 0.24. Net, the trade loses 0.62 per tranche; it is profitable only in 1996--2000, when realized single-stock volatility was exceptionally high (the long leg earned 2.6).
+  \item \textbf{The cost gap is structural.} The stylized trade pays one half-spread (0.91 on average); the listed trade pays two on fifty-one straddles. Since costs scale with the number of contracts, a basket of fifty names is expensive to turn over. After 2011 the index straddle became cheap to trade, but single-stock spreads, still about 0.25--0.4 vol points per side, dominate.
+\end{itemize}
 
 \section{A pre-registered conditional dispersion trade}\label{sec:conditional}
 
-\subsection{Hypothesis and protocol}
+\subsection{Protocol}
 
-Section~\ref{sec:premium} shows that the correlation premium is predictable and Section~\ref{sec:standard} that the unconditional trade is thin after costs and loses in some regimes. \textbf{Hypothesis:} opening tranches only when implied correlation is rich relative to a forecast of realized correlation, net of costs, and when the volatility regime is calm, improves the risk-adjusted return and reduces drawdowns relative to opening every month.
-
-The rule, its parameters and the kill test were committed to the repository on 12~November 2026, before any signal or P\&L was computed (\texttt{PREREGISTRATION.md}). The estimation sample is 1996--2010; the test sample, 2011--2025, is used once.
+\textbf{Hypothesis:} opening tranches only when implied correlation is rich relative to a forecast of realized correlation, net of costs, and when the volatility regime is calm, improves the risk-adjusted return and reduces drawdowns relative to opening every month. The rule, its parameters and the kill test were committed on 12~November 2026, before any signal or P\&L was computed; clarifications and the final trade of Section~\ref{sec:final} were committed on 13~November, before any test-sample P\&L. The estimation sample is 1996--2010; the test sample, 2011--2025, is used once.
 
 \subsection{Correlation forecast}
 
-On each entry date $t$ we forecast the correlation realized over the next 53 trading days, the typical life of a tranche (63 days to expiry minus a 10-day exit buffer), with a HAR regression \citep{Corsi2009} in Fisher-$z$ space:
+On each entry date we forecast the correlation realized over the next 53 trading days (the life of a tranche to its exit) with a HAR regression \citep{Corsi2009} in Fisher-$z$ space:
 \begin{equation}\label{eq:har}
-  z(\mathrm{RC}^{\mathrm{fwd}}_t) = a + b_1 z(\mathrm{RC}_{21,t}) + b_2 z(\mathrm{RC}_{63,t}) + b_3 z(\mathrm{RC}_{252,t}) + b_4 z(\mathrm{IC}_t) + \varepsilon_t, \qquad z(x) = \operatorname{atanh}(x).
+  z(\mathrm{RC}^{\mathrm{fwd}}_t) = a + b_1 z(\mathrm{RC}_{21,t}) + b_2 z(\mathrm{RC}_{63,t}) + b_3 z(\mathrm{RC}_{252,t}) + b_4 z(\mathrm{IC}_t) + \varepsilon_t, \qquad z(x) = \operatorname{atanh}(x),
 \end{equation}
-It is estimated by OLS on the 166 entry dates whose target window ends by December 2010 and then frozen.
+estimated by OLS on the 166 entry dates whose target window ends by December 2010.
 
 \begin{table}[t]
   \centering
@@ -246,56 +337,131 @@ It is estimated by OLS on the 166 entry dates whose target window ends by Decemb
   \end{tabular}
 \end{table}
 
-Realized correlation is persistent at the monthly and yearly horizons; once past realized correlation is known, implied correlation adds nothing to the forecast (Table~\ref{tab:har}). The forecast beats the naive alternatives on the estimation sample (RMSE 0.088 against 0.115 for RC$_{21}$ and 0.103 for RC$_{63}$). The correlation premium used by the rule is $\mathrm{CP}_t = \mathrm{IC}_t - \widehat{\mathrm{RC}}_t$.
+Realized correlation is persistent at the monthly and yearly horizons; once past RC is known, IC adds nothing (Table~\ref{tab:har}). The model beats the naive forecasts in sample (RMSE 0.088 against 0.115 for RC$_{21}$ and 0.103 for RC$_{63}$) and out of sample (0.134 against 0.177 and 0.159). The correlation premium is $\mathrm{CP}_t = \mathrm{IC}_t - \widehat{\mathrm{RC}}_t$.
 
-\subsection{Trading rule}
+\subsection{Trading rule and benchmark}
 
 Open a tranche on entry date $t$ if and only if
 \begin{equation}\label{eq:rule}
-  \mathrm{CP}_t > c + k\cdot\mathrm{RMSE} \qquad\text{and}\qquad \mathrm{VIX}_t < \mathrm{VIX}^{(80)}_{1996\text{--}2010},
+  \mathrm{CP}_t > c + k\cdot\mathrm{RMSE} \qquad\text{and}\qquad \mathrm{VIX}_t < 26.8,
 \end{equation}
-with $k = 0.5$ and the VIX threshold equal to the 80th percentile of VIX closes in the estimation sample (26.8).
+with $k = 0.5$, VIX below its 1996--2010 80th percentile, and $c = 0.094$ from equation~\eqref{eq:cost}, averaging the round-trip cost of the selected contracts over 176 estimation-sample entries (2.25 vol points: 0.80 SPX, 1.45 basket). The rule thus requires a premium of 13.8 correlation points. It held in 18\% of estimation-sample months and in 7\% of test-sample months: the average CP fell from 9.3 to 6.4 points.
 
-\paragraph{Cost threshold.} $c$ is the average round-trip cost of a tranche in correlation units, measured on the contracts actually selected. Per unit of tranche vega,
-\[
-  \text{cost}_t = h_{\mathrm{SPX}} + \sum_i \tilde w_i h_i, \qquad h_x = \frac{\text{half-spread at entry} + \text{half-spread at exit}}{\text{straddle vega at entry}},
-\]
-with the exit quote taken 10 trading days before expiry. From equation~\eqref{eq:avgcorr}, a change $d\rho$ in the correlation priced into the index moves index volatility by $d\sigma_I = C\,d\rho/(2\sigma_I)$, where $C = (\sum w_i\sigma_i)^2 - \sum w_i^2\sigma_i^2$. Since a vega-neutral tranche earns the index-volatility mispricing per unit of vega, the premium needed to pay the costs is $c_t = (\text{cost}_t/100)\cdot 2\sigma_I/C$. Averaging over 176 estimation-sample entry dates gives
-\[
-  c = 0.094 \quad\text{(round-trip cost 2.25 vol points: 0.80 SPX, 1.45 basket).}
-\]
-The rule therefore requires a premium of $0.094 + 0.5\times 0.088 = 0.138$. On the estimation sample this condition alone holds in 45 of 168 months (27\%).
-
-\subsection{Trade construction and evaluation}
-
-Contracts, sizing and execution follow the pre-registration. On each entry date, for SPX and for each of the top 50 members, we trade the standard monthly expiry closest to 91 days (60 to 130 days) and the strike closest to spot with both call and put quoted. The legs are vega-neutral, with the long-leg vega split by index weight. We buy at the ask and sell at the bid, hedge delta daily with IvyDB deltas (costs of 0.5\,bp of notional for the index and 1\,bp for stocks), keep at most three live tranches of one-third of the vega budget each, and exit 10 trading days before expiry. A missing quote is carried forward for at most three days.
-
-The benchmark is the same ladder opening a tranche every month, rescaled to the same average vega as the conditional strategy. The strategy is \emph{kept} if, on 2011--2025,
-\begin{enumerate}
-  \item its Sharpe ratio exceeds the benchmark's with a one-sided block-bootstrap $p$-value below 0.10 (3-month blocks, 10{,}000 draws; \citealp{Kunsch1989});
-  \item its maximum drawdown is at most two-thirds of the benchmark's; and
-  \item both hold, in point estimate, for every $k \in \{0, 0.25, 0.5, 0.75, 1\}$.
-\end{enumerate}
-It is \emph{dropped} if it adds nothing or if the sign of the Sharpe difference flips across $k$; any other outcome is reported as inconclusive. Seven variants are reported but do not enter the decision, and the deflated Sharpe ratio \citep{BaileyLopezdePrado2014} accounts for the eight strategies evaluated.
+The benchmark opens a tranche every month and is rescaled to the same average vega as the rule, so that the drawdown comparison is not driven by lower exposure. The rule is \emph{kept} if on 2011--2025 (i)~its Sharpe ratio exceeds the benchmark's with a one-sided block-bootstrap $p < 0.10$ (3-month blocks, 10{,}000 draws; \citealp{Kunsch1989}); (ii)~its maximum drawdown is at most two-thirds of the benchmark's; (iii)~both hold, in point estimate, for $k \in \{0, 0.25, 0.5, 0.75, 1\}$. It is \emph{dropped} if it adds nothing or if the sign of the Sharpe difference flips across $k$. Seven variants are reported without entering the decision. Deflated Sharpe ratios \citep{BaileyLopezdePrado2014} use ten trials, including the two final-trade models.
 
 \subsection{Results}
 
-\fbox{\parbox{0.95\textwidth}{\textit{Not yet computed.} By design, the test sample is used once, after the final trade of Section~\ref{sec:final} has been designed and pre-registered.}}
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Ladder of listed-contract tranches, monthly P\&L per unit of vega budget (vol points). ``Vega'' is the average share of the vega budget in use. $\Delta$SR and $p$: Sharpe difference against the unconditional ladder rescaled to the same average vega, one-sided block bootstrap. DD ratio: maximum drawdown relative to that benchmark.}
+  \label{tab:kill}
+  \begin{tabular}{lrrrrrrr}
+    \toprule
+    & Tranches & Vega & Mean & Sharpe & $\Delta$SR & $p$ & DD ratio \\
+    \midrule
+    \multicolumn{8}{l}{\textit{Estimation sample, 1996--2010 (in sample)}} \\
+    Unconditional              & 179 & 1.03 & $-0.203$ & $-0.42$ &      &       &      \\
+    Primary rule ($k = 0.5$)   &  33 & 0.19 & 0.034 & 0.21 & 0.63 & 0.043 & 0.50 \\
+    Final trade: ridge         &  27 & 0.12 & 0.098 & 0.66 & 1.08 & 0.000 & 0.24 \\
+    Final trade: boosting      &  48 & 0.18 & 0.290 & 1.23 & 1.65 & 0.000 & 0.06 \\
+    \midrule
+    \multicolumn{8}{l}{\textit{Test sample, 2011--2025 (out of sample, run once)}} \\
+    Unconditional              & 176 & 1.01 & $-0.203$ & $-0.72$ &      &       &      \\
+    Primary rule ($k = 0.5$)   &  13 & 0.08 & $-0.024$ & $-0.47$ & 0.24 & 0.194 & 1.91 \\
+    \quad V1 CP filter only    &  19 & 0.11 & $-0.028$ & $-0.34$ & 0.38 & 0.062 & 1.74 \\
+    \quad V2 + VP $>$ 0        &  12 & 0.07 & $-0.026$ & $-0.53$ & 0.19 & 0.252 & 1.96 \\
+    \quad V3 + stops           &  13 & 0.06 & $-0.020$ & $-0.46$ & 0.26 & 0.190 & 2.13 \\
+    \quad V4 long leg $\times\sqrt{\mathrm{IC}}$ & 13 & 0.08 & $-0.011$ & $-0.20$ & 0.52 & 0.056 & 1.39 \\
+    \quad V5 top-30 basket     &  13 & 0.08 & $-0.029$ & $-0.54$ & 0.08 & 0.395 & 2.31 \\
+    \quad V6 costs doubled$^{a}$ &  13 & 0.08 & $-0.062$ & $-0.87$ & 1.33 & 0.000 & 1.24 \\
+    \quad V7 continuous sizing &  48 & 0.17 & $-0.030$ & $-0.44$ & 0.28 & 0.133 & 1.18 \\
+    Final trade: ridge         &  12 & 0.05 & $-0.026$ & $-0.46$ & 0.25 & 0.168 & 2.49 \\
+    Final trade: boosting      &  24 & 0.07 & $-0.015$ & $-0.22$ & 0.50 & 0.035 & 2.01 \\
+    \bottomrule
+    \multicolumn{8}{l}{\footnotesize $^{a}$ Benchmark also with doubled costs.}
+  \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/fig_killtest_cumulative.png}
+  \caption{Cumulative monthly P\&L of the timing rules and of the unconditional ladder rescaled to the vega of the primary rule. Left: estimation sample (in sample). Right: test sample, evaluated once.}
+  \label{fig:kill}
+\end{figure}
+
+Table~\ref{tab:kill} and Figure~\ref{fig:kill} report the test.
+\begin{itemize}
+  \item \textbf{In sample, the rule would have passed.} On 1996--2010 the primary rule has a positive Sharpe ratio (0.21) while the unconditional ladder loses, the bootstrap $p$-value is 0.04 and the drawdown is half the benchmark's.
+  \item \textbf{Out of sample it fails.} On 2011--2025 the rule opens only 13 tranches and loses money. Its Sharpe ratio ($-0.47$) is less negative than the benchmark's ($-0.72$), but the difference is not significant ($p = 0.19$), and its drawdown is almost twice the vega-matched benchmark's. The Sharpe difference is positive for every $k$, but the drawdown criterion fails for every $k$. By the pre-registered criteria the rule is \textbf{dropped}.
+  \item \textbf{No variant changes the picture.} All variants lose money out of sample. The least bad is the correlation-weighted long leg (V4, Sharpe $-0.20$), as the theory of Section~\ref{sec:theory} suggests: removing the long-volatility bias of vega-neutral dispersion leaves a cleaner correlation bet. Stops do not help. The sign of every Sharpe difference reflects the timing rules losing \emph{less} than an always-invested book, not making money.
+  \item \textbf{Deflated Sharpe ratios are close to zero} for all ten strategies (at most 0.03).
+\end{itemize}
+
+\paragraph{Why the signal does not work.} Figure~\ref{fig:cppnl} plots tranche P\&L against CP at entry. Regressing net tranche P\&L on CP gives $R^2 = 0.007$ in the estimation sample and $0.005$ in the test sample; slopes are positive but insignificant ($t = 0.7$ and $0.8$). Three reasons combine.
+\begin{enumerate}
+  \item \textbf{The P\&L is dominated by the path.} The standard deviation of a tranche's P\&L is about 4 vol points in 1996--2010 and 2 after 2011, against an average gross P\&L of 1.9 and 0.75. Most of the variance comes from realized gamma on the single-stock leg (equation~\eqref{eq:gamma}): earnings jumps, takeovers and sector moves that a correlation forecast cannot see.
+  \item \textbf{The premium is right on average but noisy month by month.} The HAR forecast has an RMSE of 9 correlation points in sample and 13 out of sample, as large as the premium itself. Filtering on CP selects months where IC is high relative to the forecast, but much of that gap is forecast error rather than premium.
+  \item \textbf{The threshold binds in a different regime.} The premium shrank after 2010 and especially after 2020 (Table~\ref{tab:premium}), while the cost hurdle stayed frozen at its 1996--2010 level, as the protocol requires, even though actual costs fell to 4--7 correlation points. The rule, calibrated on a period of large premia and wide spreads, almost stopped trading: 11 of its 13 tranches were opened in 2011--2016, and none after October 2021.
+\end{enumerate}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.6\textwidth]{figures/fig_cp_vs_pnl.png}
+  \caption{Net P\&L of each unconditional listed tranche against the correlation premium at entry. The dotted line is the primary rule's threshold.}
+  \label{fig:cppnl}
+\end{figure}
 
 \section{The final trade}\label{sec:final}
 
-\fbox{\parbox{0.95\textwidth}{\textit{To be written.} The final trade extends the conditional rule with richer models. Its specification will be committed to the repository before the test of Section~\ref{sec:conditional} is run.}}
+\subsection{Design}
+
+The final trade, pre-registered before the test of Section~\ref{sec:conditional} was run, drops the single threshold and forecasts the \emph{net P\&L} of a tranche directly. This targets the quantity the trader cares about, and lets the data weigh several signals that theory links to the premium and to costs:
+\begin{itemize}
+  \item the correlation premium CP and the level of three-month IC;
+  \item the slope of implied correlation (3M $-$ 1M), a proxy for the term premium;
+  \item VIX and the index volatility premium (91-day ATM implied minus 21-day realized volatility);
+  \item the index skew premium (model-free variance-swap strike minus ATM volatility);
+  \item the cross-sectional dispersion of member implied volatilities, which measures how much single-stock volatility the long leg buys;
+  \item the measured round-trip cost of the tranche.
+\end{itemize}
+The primary model is a ridge regression on standardized predictors, with the penalty chosen by expanding-window cross-validation inside 1996--2010 (validation one year at a time, training only on tranches closed before the validation year). The secondary model is gradient boosting with fixed hyperparameters (200 trees of depth 2, learning rate 0.05, subsampling 0.8). A tranche is opened only if the predicted net P\&L is positive, with size proportional to the prediction and capped at one-third of the vega budget at the 90th percentile of in-sample predictions.
+
+\subsection{Estimation}
+
+Cross-validation selects $\lambda = 100$, a heavily shrunk model. Even so, its cross-validated mean squared error (14.45) does not beat a forecast equal to the training-sample mean (14.44): the signals have essentially no out-of-sample predictive power for tranche P\&L inside the estimation period. The in-sample $R^2$ is 0.14, and some coefficients have counterintuitive signs. The coefficient on cost is positive, because the high-cost late 1990s were also the best years for the long leg. Gradient boosting fits the estimation sample almost perfectly ($R^2 = 0.80$), a sign of overfitting that no tuning inside 162 overlapping observations can fix. Both models predict a positive P\&L in only a minority of months (17\% and 30\%).
+
+\subsection{Results}
+
+Out of sample both models lose money (Table~\ref{tab:kill}). The ridge trade opens 12 tranches, with a Sharpe ratio of $-0.46$, a drawdown 2.5 times the vega-matched benchmark's, and no improvement over the simpler rule of Section~\ref{sec:conditional} ($\Delta$SR $= 0.01$, $p = 0.48$). Gradient boosting has the most dramatic in-sample curve (Figure~\ref{fig:kill}, Sharpe 1.23) and is the clearest case of in-sample overfitting: out of sample its Sharpe ratio is $-0.22$. The robustness checks of the pre-registration (other penalties, other sizing scales) do not change the sign of any result; with the 75th-percentile scale the rule is degenerate, because that percentile of in-sample predictions is negative. The final trade is \textbf{dropped}.
+
+\section{Discussion}\label{sec:discussion}
+
+\paragraph{The premium is real, the trade is not, for a price-taker.} Every measure in this paper agrees that index options price more correlation than is realized: 8.5 correlation points on average, about two vol points a quarter on the index leg, earned in every sub-period and not explained by standard factors. But the premium is earned on one leg and paid for on fifty-one. At the spreads a price-taker faces, the round trip on a three-month tranche costs as much as the premium. Our stylized results, which pay one entry spread at a standardized volatility, are comparable with the profits reported in the earlier literature \citep{Marshall2009}. The listed-contract results show how fragile those profits are to realistic execution.
+
+\paragraph{Why timing fails.} Conditioning on the premium should help if the premium varies more than the noise in its estimate. It does vary, by a factor of two across regimes, but the tranche P\&L that the trader actually earns is driven mostly by realized gamma on individual names. With a signal-to-noise ratio of this order, a rule that trades rarely is selected on a handful of good years in sample and has too few trades to show anything out of sample. Our in-sample results, all positive and significant, illustrate how convincing an unconstrained backtest of the same idea would have looked.
+
+\paragraph{Who can earn it.} The economics point to three implementations that avoid the cost problem.
+\begin{enumerate}
+  \item \textbf{Trade closer to mid.} A market maker who earns rather than pays the spread captures the gross P\&L, 1.3 vol points per tranche.
+  \item \textbf{Trade fewer, cheaper instruments.} Variance or correlation swaps, or index options against a small basket of the most liquid names, reduce the number of spreads paid.
+  \item \textbf{Hold to expiry.} Holding to expiry halves the spread paid; the stylized trade, which does so, is profitable after costs. This was not the pre-registered rule, so we report it only as a direction for future pre-registered work.
+\end{enumerate}
+Correlation-weighting the long leg (variant V4) also deserves attention: it was the least bad variant out of sample, consistent with the theory that vega-neutral dispersion carries an unwanted long-volatility exposure.
+
+\paragraph{Value of the protocol.} Had we tuned the threshold, the VIX filter or the model on the full sample, the backtests in the left panel of Figure~\ref{fig:kill} would have been the result. Pre-registration with a single out-of-sample test turned an apparently profitable strategy into a documented negative result, which is the information a trading desk needs before committing capital.
 
 \section{Conclusion}
 
-\textit{Preliminary.} The S\&P~500 correlation risk premium is large, persistent and partly predictable. A realistic dispersion trade earns it after measured costs, with a return that standard risk factors do not explain and a negative market beta. But the margin over costs is thin and concentrated in time, which motivates the conditional trade tested out of sample in Section~\ref{sec:conditional}.
+The S\&P~500 correlation risk premium is large, persistent and partly predictable, and a stylized dispersion trade earns it with returns that standard risk factors do not explain. Implemented by a price-taker on listed options, the trade does not survive round-trip costs, and two pre-registered attempts to time it, a cost-aware threshold on a HAR correlation forecast and a machine-learning forecast of tranche P\&L, fail out of sample and are dropped. The premium appears to be compensation that accrues to liquidity providers and to investors who can access correlation cheaply, rather than an anomaly that timing can exploit.
 
-\section*{Data limitations}
+\section*{Limitations}
 \begin{itemize}
   \item IvyDB data end on 29~August 2025.
   \item Weights use CRSP total market capitalization, not S\&P float-adjusted capitalization, and the 50-name basket does not replicate the index.
   \item Single-stock options are American; early exercise is ignored.
-  \item Execution and hedging costs are modeled from quotes, not observed fills.
+  \item Execution and hedging costs are modeled from end-of-day quotes, not observed fills; a desk trading inside the spread would do better, and one trading size would do worse.
+  \item The test sample contains only 13 tranches for the primary rule, so the out-of-sample comparison has low power. We report it as a failure to show an improvement, not as proof that none exists.
 \end{itemize}
 
 \bibliographystyle{apalike}

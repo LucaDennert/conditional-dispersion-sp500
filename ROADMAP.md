@@ -13,14 +13,14 @@
 
 ## Status
 
-| Part | Done | To do |
+| Part | Done | Open |
 |---|---|---|
-| Data | CRSP S&P 500 members/weights/returns; IvyDB standardized options (SPX + members, 30/91d); SPX/VIX; zero curve; SPX 91d vol surface; Fama-French 5 + momentum (daily). Validation: `src/validate_data.py` | Listed option prices with real bid/ask (`opprcd`): needs Luca's personal WRDS account (Python/JupyterHub). Member vol surfaces (variance-swap strikes, Linders-Schoutens IC). Cboe COR3M for cross-check |
-| 1 | Monthly IC, RC (21/63/252d), forward RC, VP, VIX: `src/signals.py`. IC ≈ 0.40 vs forward RC ≈ 0.30–0.33 | Write-up and figures; premium by regime; Cboe cross-check; Marshall (2009) replication 2005–07; Linders-Schoutens (2014) robustness; exact-vs-Taylor IC check already done (≤ 0.55 pts) |
-| 2 | Exact delta-hedged straddle P&L on real paths, top-50 and all members, costs, factor regressions, SPX model-free variance strike: `src/simple_dispersion*.py`, `results/SIMPLE_DISPERSION.md` | Real bid/ask by year (decimalization 2001, penny pilot 2007); pre/post-2001 split |
-| 3 | Pre-registration committed (b2a99b6); HAR forecast estimated and frozen on 1996–2010 (`results/forecast_frozen.json`) | Cost estimate *c* from real spreads; P&L engine on listed contracts; ladder, benchmark at equal vega, variants, kill test |
-| 4 | — | Design and pre-register before the part-3 test |
-| Paper | — | Format and author list to be decided by Luca |
+| Data | CRSP members/weights/returns; IvyDB standardized options, vol surfaces (SPX and members), listed option quotes for the selected contracts; SPX/VIX; zero curve; Fama-French 5 + momentum | Cboe COR3M cross-check (optional) |
+| 1 | Correlation risk premium 1996–2025, by period, maturity and VIX regime: `src/premium.py` | Marshall (2009) replication; Linders-Schoutens robustness with member smiles (optional) |
+| 2 | Stylized trade with measured entry spreads, factor regressions: `src/simple_dispersion*.py`, `results/SIMPLE_DISPERSION.md` | — |
+| 3 | Listed-contract engine (`src/listed_engine.py`, `src/tranches.py`), cost threshold c, kill test run once on 2011–2025 (`src/kill_test.py`, `results/kill_test_report.txt`): **DROP** | — |
+| 4 | Pre-registered (amendment 2), ridge + GBM estimated on 1996–2010 (`src/part4_model.py`, `results/part4_frozen.json`), tested once: **DROP** | — |
+| Paper | `paper/` (LaTeX), complete draft | Review |
 
 ## How to rebuild the working data
 

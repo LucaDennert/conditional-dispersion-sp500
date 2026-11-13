@@ -15,11 +15,11 @@ src/         reusable code (implied/realized correlation, pricing, P&L engine)
 results/     figures and tables (aggregated only)
 ```
 
-## Status
+## Status and main results
 
-- [x] Pre-registration drafted
-- [x] Data extraction (CRSP, IvyDB standardized options, SPX/VIX, zero curve)
-- [ ] Listed option histories for the backtest (needs WRDS programmatic access)
-- [x] Signals and forecast (estimation sample 1996–2010, frozen in `results/forecast_frozen.json`)
-- [x] Descriptive analysis of the plain dispersion trade, see [`results/SIMPLE_DISPERSION.md`](results/SIMPLE_DISPERSION.md)
-- [ ] Backtest and kill test (test sample 2011–2025)
+Complete. Paper: `paper/main.pdf`.
+
+- Correlation risk premium (3M): 8.5 correlation points on average, positive in 80% of months (t = 8.4).
+- Stylized dispersion trade (held to expiry, entry spreads): 0.97 vol pts per tranche, Sharpe 0.56, alpha robust to FF5 + momentum + ΔVIX.
+- Same trade on listed contracts with round-trip costs: −0.62 vol pts per tranche (gross +1.33, costs 1.94).
+- Pre-registered timing rule (part 3) and final trade (part 4, ridge / gradient boosting): pass in sample (1996–2010), fail out of sample (2011–2025). Both **dropped** under the pre-registered kill test (`results/kill_test_report.txt`).
