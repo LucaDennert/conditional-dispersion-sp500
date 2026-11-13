@@ -123,4 +123,28 @@ Regardless of outcome: P&L by leg (index vs members) and by component (vega, gam
 
 ## Amendments
 
-*(none yet)*
+### Amendment 1 — 2026-11-13, before any test-sample signal outcome or P&L is computed
+
+Written and committed before running the listed-contract P&L engine on any date and before computing any trading signal outcome on 2011–2025. Disclosure: on 2026-11-12 the out-of-sample RMSE of the correlation *forecast* on 2011–2025 was computed (`results/forecast_estimation.txt`); no trade, P&L or rule outcome was computed on the test sample.
+
+**A1. Cost threshold in correlation units (clarifies section 6).** Round-trip cost of a tranche per unit of tranche vega: cost_t = h_SPX + Σ wᵢ hᵢ, with h = (half-spread at entry + half-spread at exit) / straddle vega at entry, for the contracts actually selected, exit quote 10 trading days before expiry. A change dρ in the correlation priced into the index moves index vol by dσ_I = C·dρ/(2σ_I), C = (Σwσ)² − Σw²σ². Hence c_t = (cost_t/100)·2σ_I/C and **c = mean of c_t over 1996–2010 entries = 0.0937** (`results/cost_threshold_frozen.json`, `src/cost_corr.py`). Frozen.
+
+**A2. Engine details (clarifies section 7).** Options marked daily at mid; entry and exit at ask (buy) / bid (sell). Straddle delta = IvyDB call delta + put delta, carried forward when missing. Hedge P&L per day: −Δ·S·(R − r·dt), with R the CRSP total return for stocks and the SPX price return plus the dividend yield implied by the 91-day forward for the index (futures proxy); option premium financed at the 91-day zero rate. Hedge costs as in section 7, charged on |change in delta| × notional, including the initial hedge and the unwind. The missing-quote rule applies to the straddle as a whole. P&L is expressed per unit of SPX-leg vega at entry; members with no selected contract are dropped and the long-leg weights renormalized among the names traded.
+
+**A3. Variants (clarifies section 9).**
+- Variant 3 (stops): checked on daily closes; when triggered the whole tranche is closed at that close at bid/ask. RC21 is the trailing 21-day realized correlation of the top-50 basket weights.
+- Variant 4 (√IC): long-leg vega = √IC_t × short-leg vega.
+- Variant 5: contracts were selected for the top 50 only, so the **top-100 basket is not feasible** and is dropped; only the top-30 basket (top 30 among the 50, weights renormalized) is reported. Trial count stays at 8 (conservative).
+- Variant 7 (continuous sizing): tranche size = min(max(CP − c, 0) / (0.5·RMSE), 1) × one-third of the vega budget, i.e. full size when the premium net of costs reaches the primary threshold.
+
+### Amendment 2 — 2026-11-13: the final trade (part 4), pre-registered before the test of part 3 is run
+
+**Idea.** Instead of a single threshold on the correlation premium, forecast the net P&L of the tranche directly from several signals observed at entry, and size the tranche in proportion to the forecast.
+
+- **Target.** Net P&L (vol points per unit of tranche vega) of the unconditional tranche from the listed-contract engine (section 7, amendment A2). Estimation uses tranches whose exit date is on or before 2010-12-31.
+- **Predictors (8, standardized with estimation-sample mean and s.d.):** CP_t (section 5); IC 3M; IC slope (IC 3M − IC 1M); VIX; VP (SPX 91-day ATM IV − 21-day RV); SPX skew premium (91-day model-free variance-swap vol strike − ATM IV, from IvyDB `vsurfd`); cross-sectional dispersion of member implied vols (index-weighted s.d. of 91-day ATM IV across members); measured round-trip cost of the tranche cost_t (A1).
+- **Primary model: ridge regression.** Penalty λ chosen on the grid 10^{−2,−1.5,…,3} by expanding-window time-series cross-validation inside 1996–2010 (first fold trains on entries up to 2001-12, then adds one year per fold; validation = next year; 3-month gap between train end and validation start to avoid overlap). Refit on all estimation tranches with the chosen λ and freeze.
+- **Secondary model (reported, not decisive): gradient boosting**, scikit-learn `GradientBoostingRegressor(n_estimators=200, max_depth=2, learning_rate=0.05, subsample=0.8, random_state=0)`, same target, predictors and estimation sample.
+- **Rule.** Open a tranche only if the predicted net P&L p̂_t > 0. Size = min(p̂_t / m, 1) × one-third of the vega budget, where m is the 90th percentile of the in-sample fitted values (estimation sample). No other filter.
+- **Evaluation (2011–2025, used once, together with part 3).** The kill test of section 10 applied to the ridge rule against the vega-matched unconditional benchmark (criteria 1–2; the k-robustness criterion is replaced by robustness to m ∈ {75th, 90th, 100th percentile} and to λ one grid step either side). In addition, the Sharpe difference against the part-3 primary rule is reported with the same bootstrap. Deflated Sharpe ratios use **10 trials** (8 of part 3 + 2 of part 4).
+
