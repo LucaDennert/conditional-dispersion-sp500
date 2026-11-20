@@ -46,7 +46,11 @@ This paper studies the trade from three points of view: the researcher who wants
 
 \paragraph{Related literature.} \citet{DMV2009} show that index options are expensive relative to their constituents because correlation risk is priced, and that this accounts for most of the index variance risk premium documented by \citet{BakshiKapadia2003} and \citet{CarrWu2009}. \citet{BKT2014} show that exposure to correlation risk explains part of the cross-section of hedge fund returns. \citet{Marshall2009} documents profits from dispersion trading on U.S.\ options using simplified execution assumptions. On the demand side, \citet{BollenWhaley2004} and \citet{GPP2009} show that end-user demand moves option prices, and \citet{BKM2003} explain the steeper skew of index options. \citet{CaoHan2013} show that delta-hedged single-stock options lose money on average, which is the long leg of our trade. We add evidence with listed bid/ask quotes, an explicit distinction between price-takers and liquidity providers, a tail-risk comparison with naked index volatility, and walk-forward and pre-registered tests of timing.
 
+\ifrepolink
 All code, the pre-registration of the original timing test and the aggregated results are public.\footnote{\url{https://github.com/LucaDennert/conditional-dispersion-sp500}. Licensed data are not redistributed.}
+\else
+All code, the pre-registration of the original timing test and the aggregated results are available from the authors.
+\fi
 
 \section{The trade in a nutshell}\label{sec:nutshell}
 
@@ -786,7 +790,7 @@ A simpler valuation that prices options at OptionMetrics' standardized volatilit
 
 \section{The pre-registered timing test}\label{app:prereg}
 
-Before running any of the analyses above we pre-registered, in the public repository, a first version of the strategy and the criteria to keep or drop it. All parameters were estimated on 1996--2010, frozen, and the rules were evaluated once on 2011--2025. The design differed from the proposed strategy of Section~\ref{sec:timing} in four ways: a vega-neutral top-50 book, exit ten days before expiry, a cost threshold frozen at its 1996--2010 level, and a VIX filter.
+Before running any of the analyses above we pre-registered, in a \ifrepolink public\else time-stamped\fi\ repository, a first version of the strategy and the criteria to keep or drop it. All parameters were estimated on 1996--2010, frozen, and the rules were evaluated once on 2011--2025. The design differed from the proposed strategy of Section~\ref{sec:timing} in four ways: a vega-neutral top-50 book, exit ten days before expiry, a cost threshold frozen at its 1996--2010 level, and a VIX filter.
 
 \paragraph{Forecast.} The HAR model of equation~\eqref{eq:har}, with a 53-trading-day target (the life of a tranche to its early exit), estimated once on the 166 entry dates whose target window ended by December 2010: $\hat a = 0.090$, $\hat b_1 = 0.226$, $\hat b_2 = 0.129$, $\hat b_3 = 0.307$, $\hat b_4 = 0.036$, in-sample RMSE 0.088.
 
