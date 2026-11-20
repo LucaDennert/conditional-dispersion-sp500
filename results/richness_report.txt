@@ -1,0 +1,66 @@
+## Walk-forward forecast: first date 2000-04-03, out-of-sample RMSE 0.1144, mean richness 0.0768, mean cost (vega-neutral) 0.0422, share of months richness > cost: 0.71 (vega-neutral), 0.79 (sqrt(IC))
+
+## Results (monthly ladder, per unit vega budget; CIs 95% block bootstrap; p = one-sided Sharpe diff vs vega-matched unconditional)
+                                                       avg_vega  mean_month  mean_lo  mean_hi  sharpe  sh_lo  sh_hi   maxDD  worst_month  sharpe_diff      p  dd_ratio  tranches  mean_month_gross
+window             strategy                                                                                                                                                                       
+Walk-forward, full Unconditional, vega-neutral            1.167      -0.035   -0.225    0.162  -0.072 -0.510  0.308  48.908       -4.779        0.000  1.000     1.000       303             0.270
+                   Richness, continuous, vega-neutral     0.505      -0.027   -0.119    0.062  -0.116 -0.518  0.263  19.145       -3.123       -0.044  0.637     0.904       216             0.114
+                   Richness, binary, vega-neutral         0.837      -0.030   -0.181    0.121  -0.081 -0.515  0.309  27.424       -4.156       -0.008  0.559     0.781       216             0.191
+                   Unconditional, sqrt(IC)                1.167       0.087   -0.042    0.214   0.255 -0.124  0.629  15.562       -3.537        0.000  1.000     1.000       303             0.325
+                   Richness, continuous, sqrt(IC)         0.571       0.045   -0.026    0.114   0.231 -0.130  0.595   7.132       -3.092       -0.024  0.587     0.937       241             0.176
+                   Richness, binary, sqrt(IC)             0.932       0.054   -0.051    0.155   0.181 -0.168  0.533  10.895       -3.537       -0.074  0.780     0.876       241             0.252
+1999-2010          Unconditional, vega-neutral            1.174      -0.148   -0.513    0.269  -0.244 -1.061  0.382  42.819       -4.779        0.000  1.000     1.000       129             0.290
+                   Richness, continuous, vega-neutral     0.572      -0.088   -0.269    0.098  -0.290 -0.936  0.316  15.296       -3.123       -0.046  0.607     0.733        91             0.120
+                   Richness, binary, vega-neutral         0.832      -0.158   -0.441    0.146  -0.350 -1.105  0.275  23.293       -4.156       -0.106  0.693     0.767        91             0.145
+                   Unconditional, sqrt(IC)                1.174       0.065   -0.151    0.297   0.168 -0.415  0.750  15.558       -3.537        0.000  1.000     1.000       129             0.408
+                   Richness, continuous, sqrt(IC)         0.654       0.034   -0.094    0.161   0.145 -0.398  0.671   7.014       -2.691       -0.023  0.568     0.809       103             0.229
+                   Richness, binary, sqrt(IC)             0.939      -0.012   -0.176    0.147  -0.038 -0.548  0.464  10.895       -3.537       -0.206  0.865     0.875       103             0.265
+2011-2025          Unconditional, vega-neutral            1.154       0.053   -0.127    0.235   0.141 -0.348  0.621  12.061       -3.978        0.000  1.000     1.000       174             0.261
+                   Richness, continuous, vega-neutral     0.449       0.022   -0.060    0.108   0.136 -0.365  0.638   4.937       -3.113       -0.006  0.525     1.053       125             0.115
+                   Richness, binary, vega-neutral         0.834       0.069   -0.084    0.226   0.232 -0.299  0.736   8.797       -3.730        0.091  0.203     1.010       125             0.229
+                   Unconditional, sqrt(IC)                1.154       0.106   -0.044    0.251   0.348 -0.143  0.864   8.309       -3.475        0.000  1.000     1.000       174             0.267
+                   Richness, continuous, sqrt(IC)         0.502       0.056   -0.024    0.132   0.351 -0.131  0.926   4.991       -3.092        0.003  0.510     1.381       138             0.140
+                   Richness, binary, sqrt(IC)             0.920       0.106   -0.026    0.238   0.382 -0.090  0.893   6.025       -3.475        0.034  0.353     0.910       138             0.245
+
+## Robustness to the split year (main: continuous, sqrt(IC))
+              sharpe_strategy  sharpe_uncond
+split part                                  
+2005  before             0.46           0.89
+      after              0.16           0.07
+2008  before             0.17           0.34
+      after              0.25           0.20
+2011  before             0.15           0.17
+      after              0.35           0.35
+2015  before             0.17           0.23
+      after              0.32           0.26
+
+## Deflated Sharpe (walk-forward full, 20 trials)
+{
+ "Unconditional, vega-neutral": 0.023,
+ "Richness, continuous, vega-neutral": 0.013,
+ "Richness, binary, vega-neutral": 0.021,
+ "Unconditional, sqrt(IC)": 0.355,
+ "Richness, continuous, sqrt(IC)": 0.312,
+ "Richness, binary, sqrt(IC)": 0.229
+}
+
+## Does richness predict tranche P&L (top-20, vega-neutral, held to expiry)?
+{
+ "gross": {
+  "slope": -5.14,
+  "t": -1.12,
+  "R2": 0.008
+ },
+ "net": {
+  "slope": -7.36,
+  "t": -1.72,
+  "R2": 0.016
+ }
+}
+            richness  gross    net   n
+richness                              
+Q1 (cheap)    -0.007  1.403  0.685  61
+Q2             0.043  0.276 -0.569  60
+Q3             0.077  1.092  0.118  61
+Q4             0.111  0.580 -0.344  60
+Q5 (rich)      0.163  0.715 -0.430  61

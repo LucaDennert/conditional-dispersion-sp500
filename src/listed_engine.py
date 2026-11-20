@@ -63,7 +63,11 @@ def simulate_straddle(mid, hs, delta, S, R, r, bp):
     return out_mid, out_hc, hs_out, hpos, live, e
 
 
-def build(data: Path) -> pd.DataFrame:
+def build(data: Path, mode: str = "exit10") -> pd.DataFrame:
+    """mode = "exit10": close 10 trading days before expiry at bid/ask (pre-registered rule).
+    mode = "expiry": hold to expiry, settle at intrinsic value on the last trading day on or before
+    the expiration date (close of that day; for AM-settled SPX this approximates the opening
+    settlement), no exit spread, hedge unwind netted against exercise."""
     ch = pd.read_csv(data / "contracts_chosen_v2.csv.gz", parse_dates=["date", "exdate"])
     ch["optionid"] = ch.optionid.astype("int64")
     paths = pd.read_pickle(data / "listed_paths.pkl")
@@ -75,6 +79,7 @@ def build(data: Path) -> pd.DataFrame:
 
     S_m = mem.assign(p=mem.prc.abs()).pivot_table(index="date", columns="secid", values="p").reindex(cal).ffill(limit=5)
     R_m = mem.pivot_table(index="date", columns="secid", values="ret").reindex(cal)
+    RX_m = mem.pivot_table(index="date", columns="secid", values="retx").reindex(cal)
     S_i = spx["spx"]
     Rx_i = spx["spx"].pct_change()
 
@@ -95,8 +100,10 @@ def build(data: Path) -> pd.DataFrame:
             if not np.isfinite(vega) or vega <= 0.005:
                 continue
             exd = g.exdate.iloc[0]
-            k = cal.searchsorted(exd, side="left")
-            ie = k - EXIT_BUFFER
+            if mode == "expiry":
+                ie = cal.searchsorted(exd, side="right") - 1
+            else:
+                ie = cal.searchsorted(exd, side="left") - EXIT_BUFFER
             if ie <= i0 or ie >= len(cal):
                 continue
             days = cal[i0: ie + 1]
@@ -116,15 +123,14 @@ def build(data: Path) -> pd.DataFrame:
                 h = ((o.best_offer - o.best_bid) / 2 * adj).where(ok)
                 mids.append(m)
                 hss.append(h)
-                dels.append(o.delta * adj)
+                dels.append(o.delta)          # delta per share; hedge uses split-adjusted price below
             if len(mids) != 2:
                 continue
             mid = (mids[0] + mids[1])
             hs = (hss[0] + hss[1])
             if not np.isfinite(mid.iloc[0]):
                 continue
-            mid = mid.ffill(limit=CARRY).values
-            hs = hs.ffill(limit=CARRY).values
+            k0 = float(k_t.iloc[0])
             delta = (dels[0].ffill() + dels[1].ffill()).ffill().fillna(0.0).values
             if sid == SPX_SECID:
                 f91 = spx["fwd91"].iat[i0]
@@ -135,12 +141,25 @@ def build(data: Path) -> pd.DataFrame:
             else:
                 if sid not in S_m.columns:
                     continue
-                S = S_m[sid].iloc[i0: ie + 1].ffill().bfill().values
+                # price in ORIGINAL-share units (split-adjusted from the entry date): handles both
+                # strike-adjusted splits and deliverable-adjusted ones (e.g. reverse splits)
+                p0 = S_m[sid].iloc[i0: ie + 1].ffill().bfill().iat[0]
+                gx = (1 + RX_m[sid].iloc[i0 + 1: ie + 1].fillna(0.0)).cumprod().values
+                S = p0 * np.concatenate([[1.0], gx])
                 R = R_m[sid].iloc[i0: ie + 1].fillna(0.0).values
                 bp = HEDGE_BP["stock"]
             if not np.isfinite(S).all():
                 continue
+            if mode == "expiry":
+                if exd > cal[-1]:
+                    continue                                    # expiry beyond the end of the data
+                mid.iloc[-1] = abs(S[-1] - k0)                  # settlement at intrinsic value
+                hs.iloc[-1] = 0.0
+            mid = mid.ffill(limit=CARRY).values
+            hs = hs.ffill(limit=CARRY).values
             om, hc, hso, hpos, live, e = simulate_straddle(mid, hs, delta, S, R, r, bp)
+            if mode == "expiry" and e == len(days) - 1:
+                hc[e] = 0.0                                      # exercise nets the hedge
             n = len(days)
             rows.append(pd.DataFrame({
                 "entry": t0, "secid": int(sid), "day": np.arange(n), "date": days,
@@ -155,6 +174,7 @@ def build(data: Path) -> pd.DataFrame:
 
 if __name__ == "__main__":
     data = Path(sys.argv[1])
-    df = build(data)
-    df.to_pickle(data / "engine_legs.pkl")
+    mode = sys.argv[2] if len(sys.argv) > 2 else "exit10"
+    df = build(data, mode)
+    df.to_pickle(data / ("engine_legs.pkl" if mode == "exit10" else "engine_legs_expiry.pkl"))
     print(len(df), df.entry.nunique(), df.groupby("entry").secid.nunique().describe().round(1).to_dict())

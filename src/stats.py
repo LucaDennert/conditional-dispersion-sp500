@@ -112,3 +112,20 @@ def deflated_sharpe(monthly: np.ndarray, n_trials: int, sr_trials_var: float) ->
     g = 0.5772156649
     sr0 = sqrt(sr_trials_var) * ((1 - g) * _norm_ppf(1 - 1 / n_trials) + g * _norm_ppf(1 - 1 / (n_trials * e)))
     return _norm_cdf((sr - sr0) * sqrt(T - 1) / sqrt(1 - skew * sr + (kurt - 1) / 4 * sr**2))
+
+
+def block_bootstrap_ci(x, stat=np.mean, block: int = 3, draws: int = 5_000, alpha: float = 0.05, seed: int = 0):
+    """Percentile confidence interval for stat(x) from a circular block bootstrap (keeps autocorrelation)."""
+    x = np.asarray(x, float)
+    x = x[np.isfinite(x)]
+    n = len(x)
+    if n < 4:
+        return np.nan, np.nan
+    rng = np.random.default_rng(seed)
+    nb = int(np.ceil(n / block))
+    out = np.empty(draws)
+    for k in range(draws):
+        starts = rng.integers(0, n, nb)
+        idx = (starts[:, None] + np.arange(block)[None, :]).ravel()[:n] % n
+        out[k] = stat(x[idx])
+    return float(np.nanpercentile(out, 100 * alpha / 2)), float(np.nanpercentile(out, 100 * (1 - alpha / 2)))

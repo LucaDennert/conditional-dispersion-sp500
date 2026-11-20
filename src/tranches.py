@@ -14,8 +14,8 @@ BP = {"index": 0.5e-4, "stock": 1e-4}
 
 
 class Tranches:
-    def __init__(self, data: Path):
-        legs = pd.read_pickle(data / "engine_legs.pkl")
+    def __init__(self, data: Path, legs_file: str = "engine_legs.pkl"):
+        legs = pd.read_pickle(data / legs_file)
         weights = pd.read_pickle(data / "weights_monthly.pkl").dropna(subset=["secid"])
         self.cal = pd.read_pickle(data / "spx_daily.pkl").index
         self.E = {}

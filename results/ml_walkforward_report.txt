@@ -1,0 +1,24 @@
+## Walk-forward ML timing, 2003-2025 (monthly ladder per unit vega budget)
+                            avg_vega  mean_month  mean_lo  mean_hi  sharpe  sh_lo  sh_hi   maxDD  worst_month  sharpe_diff      p  dd_ratio  tranches
+strategy                                                                                                                                             
+Unconditional (main trade)     1.164       0.052   -0.073    0.176   0.161 -0.219  0.562  15.562       -3.537        0.000  1.000     1.000       270
+ML timing: ridge               0.771       0.001   -0.090    0.094   0.006 -0.372  0.416  11.811       -3.356       -0.154  0.926     1.146       228
+ML timing: gbm                 0.273      -0.001   -0.052    0.046  -0.011 -0.406  0.415   5.646       -2.521       -0.171  0.835     1.548       146
+
+## Out-of-sample forecast quality
+{
+ "ridge": {
+  "oos_corr_pred_actual": -0.209,
+  "slope": -0.447,
+  "t": -4.11,
+  "oos_R2_vs_zero": -0.488,
+  "share_traded": 0.934
+ },
+ "gbm": {
+  "oos_corr_pred_actual": -0.031,
+  "slope": -0.054,
+  "t": -0.51,
+  "oos_R2_vs_zero": -0.372,
+  "share_traded": 0.598
+ }
+}
