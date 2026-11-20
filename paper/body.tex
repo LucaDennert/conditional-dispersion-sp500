@@ -3,7 +3,7 @@
 
 \begin{abstract}
 \noindent
-Index options on the S\&P~500 consistently price more correlation among the index members than is subsequently realized. We measure this correlation risk premium from 1996 to 2025 with OptionMetrics and CRSP data and ask how much of it an equity derivatives desk can capture with a dispersion trade: short an index straddle, long straddles on the largest members, delta-hedged, using the listed contracts and quotes that were actually available. The premium is large: three-month implied correlation exceeds realized correlation by 8.5 points on average (95\% CI 6.5--10.5). The textbook vega-neutral trade earns 1.35 vol points per three-month tranche before costs but only 0.31 after them, an amount not distinguishable from zero. Paying the spread once (holding to expiry) and sizing the long leg by the square root of implied correlation lifts the net result to 0.57 vol points per tranche (CI 0.21--0.94), with an annualized Sharpe ratio of 0.51 for the monthly ladder and much smaller tails than selling index straddles outright: in the 2008 and 2020 crashes the trade lost 1.6 and 3.0 vol points per unit of vega budget, against 25 and 24 for a short SPX straddle. Most of this return is the index volatility premium earned with less crash risk. Trying to time the trade does not help: neither a cost-aware signal based on implied correlation relative to a forecast of realized correlation nor walk-forward machine-learning models improve on trading every month.
+Index options on the S\&P~500 consistently price more correlation among the index members than is subsequently realized. We measure this correlation risk premium from 1996 to 2025 with OptionMetrics and CRSP data and ask how much of it an equity derivatives desk can capture with a dispersion trade: short an index straddle, long straddles on the largest members, delta-hedged, using the listed contracts and quotes that were actually available. The premium is large: three-month implied correlation exceeds realized correlation by 8.5 points on average (95\% CI 6.5--10.5). The textbook vega-neutral trade earns 1.35 vol points per three-month tranche before costs but only 0.31 after them, an amount not distinguishable from zero. Paying the spread once (holding to expiry) and sizing the long leg by the square root of implied correlation lifts the net result to 0.57 vol points per tranche (CI 0.21--0.94), with an annualized Sharpe ratio of 0.51 for the monthly ladder and much smaller tails than selling index straddles outright: in the 2008 and 2020 crashes the trade lost 1.6 and 3.0 vol points per unit of vega budget, against 25 and 24 for a short SPX straddle. Most of this return is the index volatility premium earned with less crash risk. Trying to time the trade does not help: neither a cost-aware signal based on implied correlation relative to a forecast of realized correlation nor walk-forward machine-learning models improve on trading every month. A simulated short correlation swap would have broken even at a dealer margin of 8.5 correlation points (4.8 since 2020), with large losses after calm periods; for this instrument the richness signal does improve results.
 \end{abstract}
 
 \section{Introduction}
@@ -16,6 +16,7 @@ This paper studies the trade from the point of view of an equity derivatives des
   \item \textbf{How much does the basic trade earn, before and after realistic costs?} (Section~\ref{sec:basic})
   \item \textbf{What are its risks, in particular in market crashes?} (Section~\ref{sec:risk})
   \item \textbf{Can it be improved}, by implementing it differently or by trading only when the premium is large? (Sections~\ref{sec:basic}, \ref{sec:timing} and~\ref{sec:ml})
+  \item \textbf{When would selling correlation directly, through a correlation swap, pay?} (Section~\ref{sec:cswap})
 \end{enumerate}
 
 \paragraph{What we do differently.} Most studies value the trade with a shortcut (vega times realized minus implied volatility) and assumed transaction costs. We instead simulate the trade on the listed options a desk would have traded: for SPX and each member we pick the actual three-month near-the-money contract, buy at the ask and sell at the bid, mark it daily at mid, hedge delta daily, and settle at expiry. All results are reported both before and after costs, with confidence intervals, and we list explicitly how each known source of backtest bias is handled (Table~\ref{tab:bias}).
@@ -27,6 +28,7 @@ This paper studies the trade from the point of view of an equity derivatives des
   \item \textbf{One theory-motivated change makes a clear difference.} A vega-neutral book is implicitly long the \emph{level} of volatility; scaling the long leg by $\sqrt{\text{IC}}$ removes that bias and lowers costs. Net P\&L rises to 0.57 vol points per tranche (CI 0.21--0.94), drawdowns shrink by two-thirds, and the result is positive in both halves of the sample.
   \item \textbf{Tails are the reason to trade dispersion rather than naked index volatility.} Selling SPX straddles earns more on average but lost 24--25 vol points per unit of vega budget in each of the 2008 and 2020 crashes. The correlation-weighted dispersion trade earns less but its crash losses are an order of magnitude smaller.
   \item \textbf{Timing does not add value.} The premium at entry does not predict the P\&L of a tranche. A strategy that trades only when implied correlation is rich relative to our forecast, net of the cost observed that day, and walk-forward machine-learning models both fail to beat trading every month.
+  \item \textbf{For correlation swaps, timing does work, but margins decide.} A simulated short correlation swap would have broken even at a dealer margin of 8.5 correlation points, but only 4.8 since 2020, so at realistic margins of 4--6 points little is left. It loses in one quarter out of five, with losses of up to 35 points after calm periods. Selling only when richness exceeds the margin clearly improves it, because the forecast and the swap payoff measure the same thing.
 \end{itemize}
 
 \begin{desk}
@@ -441,19 +443,101 @@ We also tried to forecast the net P\&L of each tranche directly from eight signa
 
 The result is negative (Table~\ref{tab:ml}). Out of sample the forecasts are uncorrelated or negatively correlated with realized P\&L, and both timed strategies earn about nothing, against a positive return for trading every month. An earlier, pre-registered version of the same idea (Appendix~\ref{app:prereg}) told the same story: gradient-boosted trees fitted the 1996--2010 data almost perfectly (in-sample Sharpe ratio 1.23) and lost money in 2011--2025. With about 25 years of monthly, overlapping tranches there is too little data, and too much noise, for flexible models to find a stable signal.
 
+\section{Selling correlation directly: correlation swaps}\label{sec:cswap}
+
+\textbf{Short answer:} a short correlation swap would have earned the premium without the single-stock noise of a dispersion trade, but it loses in about one quarter in five, with losses of up to 35 correlation points in the shocks that follow calm markets. It pays only if the dealer's margin is small, and in that case selling only when implied correlation is rich relative to our forecast clearly helps.
+
+\paragraph{The instrument.} A correlation swap pays, at maturity, the notional times the difference between the realized average correlation of a basket and a fixed strike. The seller receives
+\begin{equation}\label{eq:cswap}
+  \text{Payoff} = N \times \bigl(K - \text{RC}\bigr), \qquad K = \text{IC} - h ,
+\end{equation}
+where $h$ is the margin the dealer keeps below the correlation implied by option prices. Since no historical quotes are available to us, we simulate a three-month swap on the S\&P~500 entered on the first trading day of each month, with $K$ equal to our ATM implied correlation minus $h \in \{0, 2, 4, 6\}$ correlation points, and RC the average correlation realized over the next 63 trading days (equation~\eqref{eq:avgcorr} with realized volatilities). To compare with the rest of the paper, one correlation point is worth about 0.21 vol points on the index (Section~\ref{sec:nutshell}): a margin of 5 correlation points costs roughly what the spreads cost in the listed dispersion trade (about one vol point).
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Short three-month correlation swap struck at implied correlation, by period. Payoff $K - \text{RC}$ in correlation points per unit notional. The mean payoff at $h = 0$ is the largest dealer margin at which the trade would have broken even. Sharpe ratios annualized from non-overlapping swaps.}
+  \label{tab:cswapA}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lrcrrrrr}
+    \toprule
+    Period & Months & Break-even margin [95\% CI] & Loss share & CVaR$_{5\%}$ & Worst & Sharpe ($h=0$) & Sharpe ($h=4$) \\
+    \midrule
+    1996--2007 & 143 & 10.4 [7.8, 12.9] & 16\% &  9.1 & $-$13.9 & 1.90 & 1.17 \\
+    2008--2009 &  24 &  6.3 [$-$0.7, 11.5] & 21\% & 19.8 & $-$20.0 & 1.24 & 0.45 \\
+    2010--2019 & 120 &  8.6 [5.2, 11.7] & 19\% & 25.0 & $-$32.7 & 1.31 & 0.70 \\
+    2020--2025 &  65 &  4.8 [0.4, 8.9] & 29\% & 28.9 & $-$35.5 & 0.77 & 0.12 \\
+    \midrule
+    Full sample & 352 &  8.5 [6.6, 10.3] & 20\% & 22.7 & $-$35.5 & 1.38 & 0.73 \\
+    \bottomrule
+  \end{tabular}}
+\end{table}
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Selling every month versus selling only when richness (implied correlation minus the walk-forward HAR forecast, Section~\ref{sec:timing}) exceeds the dealer margin $h$. April 2000--May 2025. Payoff net of the margin, correlation points per unit notional.}
+  \label{tab:cswapB}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{rlrcrrrr}
+    \toprule
+    Margin $h$ & Rule & Share of months & Mean [95\% CI] & Loss share & CVaR$_{5\%}$ & Worst & Sharpe \\
+    \midrule
+    0 & Every month       & 100\% & 6.9 [5.0, 8.8] & 22\% & 23.7 & $-$35.5 & 1.20 \\
+      & Richness $> h$    &  90\% & 7.3 [5.3, 9.2] & 22\% & 23.9 & $-$35.5 & 1.23 \\
+    2 & Every month       & 100\% & 4.9 [3.0, 6.8] & 25\% & 25.7 & $-$37.5 & 0.85 \\
+      & Richness $> h$    &  83\% & 5.8 [3.7, 7.8] & 24\% & 23.9 & $-$37.5 & 1.01 \\
+    4 & Every month       & 100\% & 2.9 [1.0, 4.8] & 34\% & 27.7 & $-$39.5 & 0.51 \\
+      & Richness $> h$    &  72\% & 4.1 [2.0, 6.2] & 30\% & 25.9 & $-$39.5 & 0.72 \\
+    6 & Every month       & 100\% & 0.9 [$-$1.0, 2.8] & 39\% & 29.7 & $-$41.5 & 0.16 \\
+      & Richness $> h$    &  61\% & 3.4 [1.2, 5.6] & 30\% & 23.3 & $-$31.8 & 0.63 \\
+    \bottomrule
+  \end{tabular}}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/fig_corr_swap.png}
+  \caption{Left: cumulative payoff of a ladder of short correlation swaps (one-third of the notional each month) for different dealer margins, and of the richness rule with a 4-point margin. Right: average and worst payoff by quintile of richness at entry ($h = 0$).}
+  \label{fig:cswap}
+\end{figure}
+
+\paragraph{How much it earns, and how it loses.} Table~\ref{tab:cswapA} gives the break-even margin, the largest $h$ at which selling correlation every month would still have paid: 8.5 correlation points over the full sample, but only 4.8 since 2020. The payoff is stable most of the time and the Sharpe ratio before margins is high (1.4), but the losses are severe when they come. One swap in five loses; the worst 5\% lose 23 correlation points on average and the worst 35. The worst entries all came in \emph{calm} markets just before a shock: January 2020 (implied 0.32, realized 0.68), January 2018 (0.19 against 0.52, VIX below 10), February 2025, July 2011. A correlation swap is the purest form of the short-correlation bet. Unlike a dispersion trade, it has no long single-stock leg to cushion the crash.
+
+\paragraph{When it pays.} Three conditions emerge from Tables~\ref{tab:cswapA}--\ref{tab:cswapB} and Figure~\ref{fig:cswap}.
+\begin{itemize}
+  \item \textbf{The margin must be small.} At $h = 4$ the trade still earns 2.9 points per swap (CI 1.0--4.8) since 2000; at $h = 6$ it earns nothing (0.9, CI $-$1.0 to 2.8). Since 2020, the premium has been about 5 points, so any margin above that loses.
+  \item \textbf{Sell when implied correlation is high or rich, not when it is low.} By terciles of implied correlation, the average payoff is 1.9, 7.0 and 11.9 points, and the share of losing swaps falls from 31\% to 14\%. By VIX, the low-volatility tercile earns the least (3.8) and contains the worst losses.
+  \item \textbf{Richness works for swaps.} Unlike for the dispersion trade, richness at entry predicts the swap payoff (slope 0.58, $t = 4.7$). The richest quintile earned 13.5 points with a loss in only 8\% of cases and a worst loss of 17; the cheapest two quintiles earned about 3 with losses in nearly 30\% of cases. Selling only when richness exceeds the margin raises the Sharpe ratio at every margin, and at $h = 6$ turns a break-even trade into a profitable one (3.4 points, CI 1.2--5.6) while cutting the worst loss from 41 to 32 points.
+\end{itemize}
+The contrast with Section~\ref{sec:timing} is instructive. The forecast is a forecast of correlation, and a correlation swap pays correlation, so the signal matches the payoff. A dispersion tranche pays correlation \emph{plus} the realized gamma of twenty single-stock options, which is much larger and unrelated to the signal.
+
+\paragraph{Why this is hard to implement.}
+\begin{itemize}
+  \item \textbf{Access.} Correlation swaps trade over the counter, mainly on the S\&P~500 and the Euro Stoxx~50. They require an ISDA agreement and collateral arrangements with a dealer, which rules out most small investors.
+  \item \textbf{Liquidity and availability.} Two-way prices are not always available, and the price depends on the dealer's axe, which depends on the structured products in its book. In stress, the market can disappear.
+  \item \textbf{The strike is not the option-implied correlation.} Dealers price from their full volatility surfaces, skew included (so variance-based implied correlation is typically above our ATM measure), and then quote below that level to pay for hedging a product they can only hedge with a dispersion book. The margin $h$ is the dealer's compensation, and we cannot observe it historically.
+  \item \textbf{Contract terms.} Realized correlation is usually defined as the weighted or equally weighted average of pairwise correlations on a fixed basket, not by equation~\eqref{eq:avgcorr}; payoffs are often capped; corporate actions need specific clauses. Our simulation is an approximation of the economics, not of a specific contract.
+  \item \textbf{Counterparty and margin risk.} The losses arrive in crises, which is exactly when collateral calls are largest.
+\end{itemize}
+
+\begin{desk}
+A short correlation swap is the cleanest way to sell the premium, but it is a crash-exposed trade that loses in one quarter out of five. Its break-even dealer margin was 8.5 correlation points (about 1.8 vol points) over 1996--2025, but only about 5 since 2020: at a margin of 4--6 points there is little left. If you sell correlation through swaps, condition on richness: unlike for dispersion, it clearly helps. Never sell cheap correlation in a calm market.
+\end{desk}
+
 \section{Discussion}\label{sec:discussion}
 
 \paragraph{What the evidence says.} The correlation risk premium is one of the most robust facts in option markets, and our data confirm it. The difficulty is not finding the premium but keeping it. A dispersion trade earns it on one leg and pays spreads on twenty or more, and the premium in vol points (about 1.8 per quarter) is of the same order as the costs. Two implementation choices make the difference between a losing and a modestly profitable trade: paying the spread once, and correlation-weighting the long leg.
 
 \paragraph{What dispersion is for.} Once correlation-weighted, the trade mostly earns the index volatility premium, with a fraction of the crash risk of selling index options outright. That is a useful product for a desk: a way to run short index volatility with a built-in hedge against the scenario that ends most short-volatility books. Its expected return is modest, and long flat periods (2001--2010 for the vega-neutral version) are part of the profile.
 
-\paragraph{Cheaper ways to hold the trade.} Since costs are the binding constraint, a desk with access to cheaper instruments would capture more of the premium: trading inside the spread as a market maker, using variance or correlation swaps \citep{CarrWu2009}, or using sector ETF options as the long leg (ten liquid contracts instead of twenty single stocks). These are natural extensions; we do not have the OTC quotes or the data needed to test them here.
+\paragraph{Cheaper ways to hold the trade.} Since costs are the binding constraint, a desk with access to cheaper instruments would capture more of the premium. A market maker who trades at or inside the spread earns something between our gross and net figures. A correlation swap (Section~\ref{sec:cswap}) removes the single-stock noise, and its payoff is predictable from richness, but it is crash-exposed and its value depends entirely on the dealer's margin, which we cannot observe. Sector ETF options as the long leg (ten liquid contracts instead of twenty single stocks) are a further natural extension that we leave to future work.
 
 \paragraph{Limitations.} OptionMetrics end-of-day quotes are for small size and may not be executable at desk scale. Weights use total, not float-adjusted, market capitalization. Early exercise of American single-stock options and SPX opening settlement are approximated. And because the 2011--2025 period was already used for the pre-registered test, the results of Sections~\ref{sec:basic}--\ref{sec:ml} are not a clean out-of-sample test; we rely on walk-forward estimation, confidence intervals and deflated Sharpe ratios instead.
 
 \section{Conclusion}
 
-Index options on the S\&P~500 have priced roughly 8.5 points more correlation than was realized, on average, for thirty years. A desk that sells this correlation through a textbook vega-neutral dispersion trade would have earned little after costs. Holding to expiry and correlation-weighting the long leg turn it into a modestly profitable trade (about 0.6 vol points per quarterly tranche) whose main merit is risk control: it keeps part of the index volatility premium while losing an order of magnitude less than a short index straddle in a crash. Trying to time the trade, with a cost-aware richness signal or with machine learning, does not help.
+Index options on the S\&P~500 have priced roughly 8.5 points more correlation than was realized, on average, for thirty years. A desk that sells this correlation through a textbook vega-neutral dispersion trade would have earned little after costs. Holding to expiry and correlation-weighting the long leg turn it into a modestly profitable trade (about 0.6 vol points per quarterly tranche) whose main merit is risk control: it keeps part of the index volatility premium while losing an order of magnitude less than a short index straddle in a crash. Trying to time the trade, with a cost-aware richness signal or with machine learning, does not help. Selling correlation directly through swaps would have paid at small dealer margins, and there the richness signal does help, but the instrument concentrates the crash risk that dispersion partly hedges.
 
 \bibliographystyle{apalike}
 \bibliography{references}

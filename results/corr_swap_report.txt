@@ -1,0 +1,60 @@
+## A. Short 3M correlation swap at IC - h, payoff K - RC in correlation points; unconditional
+             months  break_even_margin  ci_lo  ci_hi  loss_share_h0  CVaR5_h0  worst_h0  sharpe_h0  sharpe_h4
+period                                                                                                       
+1996-2007       143              0.104  0.078  0.129          0.161     0.091    -0.139      1.902      1.170
+2008-2009        24              0.063 -0.007  0.115          0.208     0.198    -0.200      1.236      0.449
+2010-2019       120              0.086  0.052  0.117          0.192     0.250    -0.327      1.307      0.701
+2020-2025        65              0.048  0.004  0.089          0.292     0.289    -0.355      0.767      0.118
+Full sample     352              0.085  0.066  0.103          0.199     0.227    -0.355      1.382      0.731
+
+## B. Always vs richness rule, 2000-04-03 to 2025-05-01
+                       months   mean  ci_lo  ci_hi  loss_share  CVaR5  worst  sharpe  share_traded
+margin_h rule                                                                                     
+0.00     always           302  0.069  0.050  0.088       0.219  0.237 -0.355   1.195         1.000
+         richness > h     271  0.073  0.053  0.092       0.218  0.239 -0.355   1.232         0.897
+0.02     always           302  0.049  0.030  0.068       0.248  0.257 -0.375   0.851         1.000
+         richness > h     250  0.058  0.037  0.078       0.236  0.239 -0.375   1.011         0.828
+0.04     always           302  0.029  0.010  0.048       0.338  0.277 -0.395   0.507         1.000
+         richness > h     216  0.041  0.020  0.062       0.301  0.259 -0.395   0.715         0.715
+0.06     always           302  0.009 -0.010  0.028       0.394  0.297 -0.415   0.163         1.000
+         richness > h     183  0.034  0.012  0.056       0.301  0.233 -0.318   0.628         0.606
+
+## C. By VIX tercile at entry (h = 0)
+       mean  loss_share  worst    n
+vix                                
+low   0.038       0.257 -0.355  101
+mid   0.086       0.180 -0.287  100
+high  0.084       0.218 -0.254  101
+
+## C. By IC tercile at entry (h = 0)
+       mean  loss_share  worst    n
+ic91                               
+low   0.019       0.307 -0.355  101
+mid   0.070       0.210 -0.264  100
+high  0.119       0.139 -0.217  101
+
+## C. By Richness quintile at entry (h = 0)
+           mean  loss_share  worst   n
+richness                              
+Q1        0.027       0.295 -0.327  61
+Q2        0.034       0.283 -0.355  60
+Q3        0.078       0.200 -0.200  60
+Q4        0.073       0.233 -0.258  60
+Q5        0.135       0.082 -0.173  61
+
+## Payoff on richness (NW 4 lags)
+       const  0.0242  (se 0.0134, t  1.80)
+    richness  0.5812  (se 0.1251, t  4.65)
+R2 = 0.092   RMSE = 0.1113
+
+## Worst entries
+            payoff   ic91   rc91    vix
+date                                   
+2020-01-02  -0.355  0.320  0.675  12.47
+2018-01-02  -0.327  0.191  0.518   9.77
+2025-02-03  -0.287  0.203  0.491  18.62
+2011-07-01  -0.264  0.429  0.693  15.87
+2018-02-01  -0.259  0.257  0.515  13.47
+2020-02-03  -0.258  0.407  0.665  17.97
+
+## Conversion: 1 correlation point ~ 0.212 vol points on the index (median C/(2 sigma_I) = 0.212)
