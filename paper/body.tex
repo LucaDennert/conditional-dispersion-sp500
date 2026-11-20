@@ -3,7 +3,7 @@
 
 \begin{abstract}
 \noindent
-Index options on the S\&P~500 consistently price more correlation among the index members than is subsequently realized. We measure this correlation risk premium from 1996 to 2025 with OptionMetrics and CRSP data and ask how much of it an equity derivatives desk can capture with a dispersion trade: short an index straddle, long straddles on the largest members, delta-hedged, using the listed contracts and quotes that were actually available. The premium is large: three-month implied correlation exceeds realized correlation by 8.5 points on average (95\% CI 6.5--10.5). The textbook vega-neutral trade earns 1.35 vol points per three-month tranche before costs but only 0.31 after them, an amount not distinguishable from zero. Paying the spread once (holding to expiry) and sizing the long leg by the square root of implied correlation lifts the net result to 0.57 vol points per tranche (CI 0.21--0.94), with an annualized Sharpe ratio of 0.51 for the monthly ladder and much smaller tails than selling index straddles outright: in the 2008 and 2020 crashes the trade lost 1.6 and 3.0 vol points per unit of vega budget, against 25 and 24 for a short SPX straddle. Most of this return is the index volatility premium earned with less crash risk. We then propose a complete strategy: the correlation-weighted trade on the 20 largest names, held to expiry, sized each month by how much implied correlation exceeds a walk-forward forecast of realized correlation net of that day's trading costs. It is profitable after costs and uses half the vega and half the drawdown of trading at full size every month, but its return per unit of risk is the same: the signal decides how much to trade, not which months are better. Walk-forward machine-learning models do no better. A simulated short correlation swap would have broken even at a dealer margin of 8.5 correlation points (4.8 since 2020), with large losses after calm periods; for this instrument the richness signal does improve results.
+Index options on the S\&P~500 consistently price more correlation among the index members than is subsequently realized. We measure this correlation risk premium from 1996 to 2025 with OptionMetrics and CRSP data and ask how much of it an investor and an equity derivatives desk can capture with a dispersion trade: short an index straddle, long straddles on the largest members, delta-hedged, using the listed contracts and quotes that were actually available. The premium is large: three-month implied correlation exceeds realized correlation by 8.5 points on average (95\% CI 6.5--10.5). The textbook vega-neutral trade earns 1.35 vol points per three-month tranche before costs but only 0.31 after them, an amount not distinguishable from zero. Paying the spread once (holding to expiry) and sizing the long leg by the square root of implied correlation lifts the net result to 0.57 vol points per tranche (CI 0.21--0.94), with an annualized Sharpe ratio of 0.51 for the monthly ladder and much smaller tails than selling index straddles outright: in the 2008 and 2020 crashes the trade lost 1.6 and 3.0 vol points per unit of vega budget, against 25 and 24 for a short SPX straddle. Most of this return is the index volatility premium earned with less crash risk. We then propose a complete strategy: the correlation-weighted trade on the 20 largest names, held to expiry, sized each month by how much implied correlation exceeds a walk-forward forecast of realized correlation net of that day's trading costs. It is profitable after costs and uses half the vega and half the drawdown of trading at full size every month, but its return per unit of risk is the same: the signal decides how much to trade, not which months are better. Walk-forward machine-learning models do no better. A simulated short correlation swap would have broken even at a dealer margin of 8.5 correlation points (4.8 since 2020), with large losses after calm periods; for this instrument the richness signal does improve results. Finally, who pays the spread decides who earns the premium: executed at mid, as a market-making desk approximately can, the correlation-weighted trade earns 1.24 vol points per tranche with a Sharpe ratio of 1.09; an investor paying the full spread keeps less than half of it.
 \end{abstract}
 
 \section{Introduction}
@@ -16,6 +16,7 @@ This paper studies the trade from the point of view of an equity derivatives des
   \item \textbf{How much does the basic trade earn, before and after realistic costs?} (Section~\ref{sec:basic})
   \item \textbf{What are its risks, in particular in market crashes?} (Section~\ref{sec:risk})
   \item \textbf{Can it be improved}, by implementing it differently and by sizing it with a signal? We describe the full methodology of our proposed strategy (Sections~\ref{sec:basic}, \ref{sec:timing} and~\ref{sec:ml}).
+  \item \textbf{Who can capture it}: how do the results change between a market-making desk that trades close to mid and an investor who pays the full spread? (Section~\ref{sec:spread})
   \item \textbf{When would selling correlation directly, through a correlation swap, pay?} (Section~\ref{sec:cswap})
 \end{enumerate}
 
@@ -28,6 +29,7 @@ This paper studies the trade from the point of view of an equity derivatives des
   \item \textbf{One theory-motivated change makes a clear difference.} A vega-neutral book is implicitly long the \emph{level} of volatility; scaling the long leg by $\sqrt{\text{IC}}$ removes that bias and lowers costs. Net P\&L rises to 0.57 vol points per tranche (CI 0.21--0.94), drawdowns shrink by two-thirds, and the result is positive in both halves of the sample.
   \item \textbf{Tails are the reason to trade dispersion rather than naked index volatility.} Selling SPX straddles earns more on average but lost 24--25 vol points per unit of vega budget in each of the 2008 and 2020 crashes. The correlation-weighted dispersion trade earns less but its crash losses are an order of magnitude smaller.
   \item \textbf{The proposed strategy works, but the signal is not where the value is.} Our full strategy (Section~\ref{sec:timing}) sizes each correlation-weighted tranche by how rich implied correlation is relative to a walk-forward forecast, net of the spreads observed that day. It is profitable after costs, halves the capital used and the drawdown, and stays out of several calm-market shocks. But its Sharpe ratio equals that of trading every month: the premium at entry does not predict the P\&L of a tranche. Walk-forward machine-learning models do no better.
+  \item \textbf{Execution decides who earns the premium.} At mid, the correlation-weighted trade earns 1.24 vol points per tranche (Sharpe 1.09) and even the early-exit trade is profitable; an investor paying the full spread keeps 46\% of that. The short SPX straddle barely depends on execution, so the index volatility premium is open to everyone while the correlation premium belongs mainly to those who trade close to mid.
   \item \textbf{For correlation swaps, timing does work, but margins decide.} A simulated short correlation swap would have broken even at a dealer margin of 8.5 correlation points, but only 4.8 since 2020, so at realistic margins of 4--6 points little is left. It loses in one quarter out of five, with losses of up to 35 points after calm periods. Selling only when richness exceeds the margin clearly improves it, because the forecast and the swap payoff measure the same thing.
 \end{itemize}
 
@@ -261,7 +263,7 @@ We regress net tranche P\&L on the market, size, value, profitability, investmen
 \end{itemize}
 
 \begin{desk}
-Hold to expiry and size the long leg by $\sqrt{\text{IC}}$. Exiting early doubles the cost and is the most expensive mistake. Fifty names are not better than twenty. Expect about 0.3--0.6 vol points per three-month tranche net, with long flat periods.
+Hold to expiry and size the long leg by $\sqrt{\text{IC}}$. Exiting early doubles the cost and is the most expensive mistake. Fifty names are not better than twenty. For an investor paying the full spread, expect about 0.3--0.6 vol points per three-month tranche net, with long flat periods; a desk trading near mid earns about twice as much (Section~\ref{sec:spread}).
 \end{desk}
 
 \section{Risks: what happens in the tails?}\label{sec:risk}
@@ -535,6 +537,96 @@ The same signal does predict the payoff of a correlation swap (Section~\ref{sec:
 
 \begin{desk}
 The proposed strategy is a sensible way to run the trade: hold to expiry, trade the 20 largest names, size the long leg by $\sqrt{\text{IC}}$, and scale the position by how rich correlation is relative to a forecast, net of today's spreads. It halves the capital and the drawdown of trading at full size every month. Do not expect the signal to raise the return per unit of risk: its value is in sizing and in staying out of cheap, calm markets.
+\end{desk}
+
+\section{Investor or desk? How much the spread matters}\label{sec:spread}
+
+\textbf{Short answer:} who captures the premium depends on who pays the spread. Executed at mid, as a market-making desk can approximately do, every version of the dispersion trade is clearly profitable, including the correlation-weighted one with a Sharpe ratio above 1. An investor who buys at the ask and sells at the bid keeps less than half of that.
+
+So far we have assumed a price-taker: every option is bought at the ask and sold at the bid. A market-making desk does not always pay the spread. It earns it on client flow, internalizes offsetting trades, and can work orders inside the quote. We therefore report the base results at mid and then the effect of paying a fraction $f$ of the quoted half-spread on every option trade:
+\begin{itemize}
+  \item $f = 0$: \textbf{desk at mid}, the base case without option transaction costs;
+  \item $f = 0.25$: a desk that crosses a quarter of the spread on average;
+  \item $f = 0.5$: execution halfway between mid and the quote;
+  \item $f = 1$: \textbf{investor}, the price-taker of the previous sections.
+\end{itemize}
+Delta-hedging costs are always paid. For the proposed strategy the cost hurdle of equation~\eqref{eq:costt} is recomputed with the same $f$, so a cheaper trader also faces a lower hurdle.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Net P\&L per tranche (vol points per unit vega, 95\% CI) as a function of the fraction $f$ of the quoted half-spread paid on option trades, 1996--2025. Sharpe ratios and maximum drawdowns are for the monthly ladder.}
+  \label{tab:spread}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{llcrrr}
+    \toprule
+    Strategy & Execution & Net per tranche [95\% CI] & 2011--2025 & Sharpe & Max DD \\
+    \midrule
+    Correlation-weighted, top-20, to expiry & Desk at mid ($f=0$)   & 1.24 [0.86, 1.63] & 0.68 & 1.09 & 7.8 \\
+                                            & $f = 0.25$            & 1.07 [0.69, 1.46] & 0.59 & 0.95 & 8.3 \\
+                                            & $f = 0.5$             & 0.90 [0.53, 1.28] & 0.50 & 0.80 & 9.1 \\
+                                            & Investor ($f=1$)      & 0.57 [0.21, 0.94] & 0.32 & 0.51 & 15.6 \\
+    \midrule
+    Vega-neutral, top-20, to expiry         & Desk at mid ($f=0$)   & 1.16 [0.62, 1.74] & 0.61 & 0.76 & 17.3 \\
+                                            & $f = 0.25$            & 0.95 [0.41, 1.53] & 0.50 & 0.62 & 19.4 \\
+                                            & $f = 0.5$             & 0.74 [0.21, 1.31] & 0.38 & 0.48 & 22.4 \\
+                                            & Investor ($f=1$)      & 0.31 [$-$0.22, 0.87] & 0.16 & 0.20 & 48.9 \\
+    \midrule
+    Vega-neutral, top-20, exit 10 days early & Desk at mid ($f=0$)  & 1.11 [0.60, 1.65] & 0.56 & 0.82 & 15.4 \\
+                                            & $f = 0.25$            & 0.70 [0.20, 1.23] & 0.30 & 0.53 & 19.5 \\
+                                            & $f = 0.5$             & 0.29 [$-$0.20, 0.81] & 0.03 & 0.22 & 40.7 \\
+                                            & Investor ($f=1$)      & $-$0.52 [$-$1.01, $-$0.01] & $-$0.50 & $-$0.40 & 105.1 \\
+    \midrule
+    Short SPX straddle alone                & Desk at mid ($f=0$)   & 1.80 [1.03, 2.47] & 1.10 & 0.87 & 27.8 \\
+                                            & Investor ($f=1$)      & 1.45 [0.69, 2.11] & 0.91 & 0.71 & 28.5 \\
+    \bottomrule
+  \end{tabular}}
+\end{table}
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{The proposed strategy (Section~\ref{sec:timing}) under the same execution scenarios, April 2000--August 2025, with the cost hurdle recomputed for each $f$. Monthly ladder per unit of vega budget. ``Every month'' is the correlation-weighted trade at full size.}
+  \label{tab:spreadprop}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lrrrrcrrr}
+    \toprule
+    & Hurdle (corr.\ pts) & Months traded & Vega & Mean & Sharpe [95\% CI] & Max DD & Every month: Sharpe & Every month: Max DD \\
+    \midrule
+    Desk at mid ($f=0$)  & 0.7 & 88\% & 0.76 & 0.183 & 0.75 [0.40, 1.11] & 6.3 & 0.82 & 7.8 \\
+    $f = 0.25$           & 1.4 & 86\% & 0.71 & 0.142 & 0.61 [0.26, 0.98] & 6.2 & 0.68 & 8.3 \\
+    $f = 0.5$            & 2.0 & 85\% & 0.67 & 0.106 & 0.48 [0.13, 0.84] & 6.0 & 0.54 & 9.1 \\
+    Investor ($f=1$)     & 3.3 & 79\% & 0.57 & 0.045 & 0.23 [$-$0.13, 0.59] & 7.1 & 0.26 & 15.6 \\
+    \bottomrule
+  \end{tabular}}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.7\textwidth]{figures/fig_spread_scenarios.png}
+  \caption{Net P\&L per tranche as a function of how much of the spread is paid (shaded: 95\% CI). The short SPX straddle hardly depends on execution; the dispersion trades depend on it heavily.}
+  \label{fig:spread}
+\end{figure}
+
+\paragraph{The base case: a desk at mid.} At mid the correlation premium is clearly there to be captured (Table~\ref{tab:spread}).
+\begin{itemize}
+  \item The correlation-weighted trade earns 1.24 vol points per tranche (CI 0.86--1.63), with a Sharpe ratio of 1.09 and a maximum drawdown of 7.8. In 2011--2025 it still earns 0.68.
+  \item Even the vega-neutral trade and the version that exits ten days early earn more than one vol point per tranche: at mid, paying the spread twice costs nothing.
+  \item The proposed strategy has a Sharpe ratio of 0.75 (CI 0.40--1.11) with a maximum drawdown of 6.3, using three-quarters of the vega budget (Table~\ref{tab:spreadprop}).
+\end{itemize}
+
+\paragraph{How the spread erodes it.} Every quarter of the spread paid costs about 0.17--0.21 vol points per tranche on the hold-to-expiry trades, and about 0.4 on the early-exit trade, which pays it twice.
+\begin{itemize}
+  \item An investor paying the full spread keeps 46\% of the correlation-weighted trade's P\&L and 26\% of the vega-neutral trade's.
+  \item The early-exit trade breaks even when about two-thirds of the spread is paid.
+  \item The short SPX straddle barely changes (1.80 at mid, 1.45 for the investor) because index options are cheap to trade. The index volatility premium is accessible to everyone; the \emph{correlation} premium, which requires trading twenty single-stock option books, is accessible mainly to whoever trades close to mid.
+\end{itemize}
+This is consistent with the demand-based view of Section~\ref{sec:nutshell}: the premium is, at least in part, the compensation earned by liquidity providers in single-stock and index options.
+
+\paragraph{The timing signal under cheaper execution.} With lower costs the hurdle falls (from 3.3 to 0.7 correlation points) and the proposed strategy trades more often. In every scenario its Sharpe ratio stays slightly below that of trading every month at full size (0.75 against 0.82 at mid), while its drawdown stays smaller (6.3 against 7.8). The conclusion of Section~\ref{sec:timing} does not depend on execution: the signal is a sizing and risk tool, not a source of extra return.
+
+\begin{desk}
+For a market-making desk that executes close to mid, correlation-weighted dispersion held to expiry is a genuinely attractive book: about 1.2 vol points per quarterly tranche, a Sharpe ratio around 1, and crash losses of a few vol points. For an investor paying the full spread, the same trade earns less than half of that, and only the hold-to-expiry, correlation-weighted version clearly survives. If you cannot trade single-stock options near mid, the index volatility premium (short SPX straddles) is far cheaper to access, at the cost of its crash risk.
 \end{desk}
 
 \section{Can machine learning do better?}\label{sec:ml}

@@ -45,8 +45,10 @@ class Tranches:
     def entries(self):
         return sorted(self.E)
 
-    def daily(self, t0, top=50, long_mult=1.0, cost_mult=1.0, stop=None, legs=False):
-        """Daily P&L of one tranche (index = trading dates). stop = day index to close at, or None."""
+    def daily(self, t0, top=50, long_mult=1.0, cost_mult=1.0, stop=None, legs=False, spread_mult=1.0):
+        """Daily P&L of one tranche (index = trading dates). stop = day index to close at, or None.
+        spread_mult scales the bid/ask half-spreads only (e.g. 0.5 = execution halfway to mid);
+        cost_mult scales all costs (spreads and hedging)."""
         E = self.E[t0]
         m, hc, hs, hpos, ex = E["mid"].copy(), E["hc"].copy(), E["hs"], E["hpos"], E["exit"].copy()
         nd = m.shape[1]
@@ -63,7 +65,7 @@ class Tranches:
             cost[j, 0] += np.nan_to_num(hs[j, 0])
             if ex[j] < nd:
                 cost[j, ex[j]] += np.nan_to_num(hs[j, ex[j]], nan=np.nan_to_num(hs[j, 0]))
-        c_all = cost_mult * (hc + cost)
+        c_all = cost_mult * (hc + spread_mult * cost)
         net = m - c_all
         keep = (E["rank"] >= 0) & (E["rank"] < top)
         w = np.where(keep, E["w"], 0.0)
