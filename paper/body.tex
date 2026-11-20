@@ -3,7 +3,7 @@
 
 \begin{abstract}
 \noindent
-Index options on the S\&P~500 consistently price more correlation among the index members than is subsequently realized. We measure this correlation risk premium from 1996 to 2025 with OptionMetrics and CRSP data and ask how much of it an equity derivatives desk can capture with a dispersion trade: short an index straddle, long straddles on the largest members, delta-hedged, using the listed contracts and quotes that were actually available. The premium is large: three-month implied correlation exceeds realized correlation by 8.5 points on average (95\% CI 6.5--10.5). The textbook vega-neutral trade earns 1.35 vol points per three-month tranche before costs but only 0.31 after them, an amount not distinguishable from zero. Paying the spread once (holding to expiry) and sizing the long leg by the square root of implied correlation lifts the net result to 0.57 vol points per tranche (CI 0.21--0.94), with an annualized Sharpe ratio of 0.51 for the monthly ladder and much smaller tails than selling index straddles outright: in the 2008 and 2020 crashes the trade lost 1.6 and 3.0 vol points per unit of vega budget, against 25 and 24 for a short SPX straddle. Most of this return is the index volatility premium earned with less crash risk. Trying to time the trade does not help: neither a cost-aware signal based on implied correlation relative to a forecast of realized correlation nor walk-forward machine-learning models improve on trading every month. A simulated short correlation swap would have broken even at a dealer margin of 8.5 correlation points (4.8 since 2020), with large losses after calm periods; for this instrument the richness signal does improve results.
+Index options on the S\&P~500 consistently price more correlation among the index members than is subsequently realized. We measure this correlation risk premium from 1996 to 2025 with OptionMetrics and CRSP data and ask how much of it an equity derivatives desk can capture with a dispersion trade: short an index straddle, long straddles on the largest members, delta-hedged, using the listed contracts and quotes that were actually available. The premium is large: three-month implied correlation exceeds realized correlation by 8.5 points on average (95\% CI 6.5--10.5). The textbook vega-neutral trade earns 1.35 vol points per three-month tranche before costs but only 0.31 after them, an amount not distinguishable from zero. Paying the spread once (holding to expiry) and sizing the long leg by the square root of implied correlation lifts the net result to 0.57 vol points per tranche (CI 0.21--0.94), with an annualized Sharpe ratio of 0.51 for the monthly ladder and much smaller tails than selling index straddles outright: in the 2008 and 2020 crashes the trade lost 1.6 and 3.0 vol points per unit of vega budget, against 25 and 24 for a short SPX straddle. Most of this return is the index volatility premium earned with less crash risk. We then propose a complete strategy: the correlation-weighted trade on the 20 largest names, held to expiry, sized each month by how much implied correlation exceeds a walk-forward forecast of realized correlation net of that day's trading costs. It is profitable after costs and uses half the vega and half the drawdown of trading at full size every month, but its return per unit of risk is the same: the signal decides how much to trade, not which months are better. Walk-forward machine-learning models do no better. A simulated short correlation swap would have broken even at a dealer margin of 8.5 correlation points (4.8 since 2020), with large losses after calm periods; for this instrument the richness signal does improve results.
 \end{abstract}
 
 \section{Introduction}
@@ -15,7 +15,7 @@ This paper studies the trade from the point of view of an equity derivatives des
   \item \textbf{How large is the premium, and how stable?} (Section~\ref{sec:premium})
   \item \textbf{How much does the basic trade earn, before and after realistic costs?} (Section~\ref{sec:basic})
   \item \textbf{What are its risks, in particular in market crashes?} (Section~\ref{sec:risk})
-  \item \textbf{Can it be improved}, by implementing it differently or by trading only when the premium is large? (Sections~\ref{sec:basic}, \ref{sec:timing} and~\ref{sec:ml})
+  \item \textbf{Can it be improved}, by implementing it differently and by sizing it with a signal? We describe the full methodology of our proposed strategy (Sections~\ref{sec:basic}, \ref{sec:timing} and~\ref{sec:ml}).
   \item \textbf{When would selling correlation directly, through a correlation swap, pay?} (Section~\ref{sec:cswap})
 \end{enumerate}
 
@@ -27,7 +27,7 @@ This paper studies the trade from the point of view of an equity derivatives des
   \item \textbf{The textbook trade barely survives costs.} Before costs it earns 1.35 vol points per tranche; costs take about 1.0 of that. Exiting before expiry, which doubles the spread paid, turns the result negative.
   \item \textbf{One theory-motivated change makes a clear difference.} A vega-neutral book is implicitly long the \emph{level} of volatility; scaling the long leg by $\sqrt{\text{IC}}$ removes that bias and lowers costs. Net P\&L rises to 0.57 vol points per tranche (CI 0.21--0.94), drawdowns shrink by two-thirds, and the result is positive in both halves of the sample.
   \item \textbf{Tails are the reason to trade dispersion rather than naked index volatility.} Selling SPX straddles earns more on average but lost 24--25 vol points per unit of vega budget in each of the 2008 and 2020 crashes. The correlation-weighted dispersion trade earns less but its crash losses are an order of magnitude smaller.
-  \item \textbf{Timing does not add value.} The premium at entry does not predict the P\&L of a tranche. A strategy that trades only when implied correlation is rich relative to our forecast, net of the cost observed that day, and walk-forward machine-learning models both fail to beat trading every month.
+  \item \textbf{The proposed strategy works, but the signal is not where the value is.} Our full strategy (Section~\ref{sec:timing}) sizes each correlation-weighted tranche by how rich implied correlation is relative to a walk-forward forecast, net of the spreads observed that day. It is profitable after costs, halves the capital used and the drawdown, and stays out of several calm-market shocks. But its Sharpe ratio equals that of trading every month: the premium at entry does not predict the P\&L of a tranche. Walk-forward machine-learning models do no better.
   \item \textbf{For correlation swaps, timing does work, but margins decide.} A simulated short correlation swap would have broken even at a dealer margin of 8.5 correlation points, but only 4.8 since 2020, so at realistic margins of 4--6 points little is left. It loses in one quarter out of five, with losses of up to 35 points after calm periods. Selling only when richness exceeds the margin clearly improves it, because the forecast and the swap payoff measure the same thing.
 \end{itemize}
 
@@ -346,45 +346,146 @@ Hold to expiry and size the long leg by $\sqrt{\text{IC}}$. Exiting early double
 Naked short index volatility is the higher-carry trade, but it loses a quarter of a vega budget in a single crash. A correlation-weighted dispersion book keeps about 40\% of the carry with crash losses an order of magnitude smaller. The main dispersion-specific risk is buying single-stock volatility just after a spike.
 \end{desk}
 
-\section{Can the trade be timed?}\label{sec:timing}
+\section{The proposed strategy: richness-sized, correlation-weighted dispersion}\label{sec:timing}
 
-\textbf{Short answer:} no. The premium at entry does not predict the P\&L of a tranche, and a strategy that trades only when the index looks rich, net of costs, does not beat trading every month.
+\textbf{Short answer:} the proposed strategy combines the two implementation fixes of Section~\ref{sec:basic} (top-20 basket, held to expiry, long leg $\times\sqrt{\text{IC}}$) with a trading signal: it sells correlation only when implied correlation is rich relative to our forecast of realized correlation, net of the cost observed that day, and sizes each tranche by how rich it is. It is profitable after costs and uses half the vega and half the drawdown of trading every month. But per unit of risk it earns the same as trading every month: the gain comes from the implementation, not from the signal.
 
-\subsection{A richness strategy}
+\subsection{Overview}
 
-The idea is the natural one for a trader: sell correlation when the index prices more correlation than we expect to be realized, and only when the excess is larger than what we pay to trade.
+On each entry date $t$ (first trading day of the month) the strategy goes through five steps, each using only information available at $t$:
 \begin{enumerate}
-  \item \textbf{Forecast} the correlation that will be realized over the life of the tranche (63 trading days) with a HAR regression \citep{Corsi2009} on past realized correlation over one month, three months and one year, and on implied correlation. The model is re-estimated every month using only tranches whose outcome was already known (walk-forward), starting in April 2000. Its out-of-sample error (RMSE) is 11.4 correlation points.
-  \item \textbf{Richness} = implied correlation minus the forecast.
-  \item \textbf{Cost hurdle} = the entry spreads observed that day on the SPX and basket straddles, plus the average hedging cost of past tranches, converted into correlation points with the factor of Section~\ref{sec:nutshell}. The hurdle therefore falls as markets become cheaper to trade, and uses no information from after the entry date.
-  \item \textbf{Size}: zero if richness is below the hurdle; proportional to the excess otherwise, reaching full size when the excess equals one forecast error. A binary version (full size whenever richness exceeds the hurdle) is also reported.
+  \item forecast the correlation that will be realized over the life of the tranche;
+  \item measure \emph{richness}, implied correlation minus the forecast;
+  \item compute the \emph{cost hurdle}, the richness needed to pay for trading;
+  \item size the tranche according to how much richness exceeds the hurdle;
+  \item build the positions and run them to expiry.
 \end{enumerate}
+
+\subsection{Step 1: forecasting realized correlation}
+
+Realized correlation is persistent at several horizons, so we use a heterogeneous autoregressive (HAR) model \citep{Corsi2009}. Its target is the average correlation realized over the next 63 trading days, the life of a three-month tranche. Its inputs are realized correlation over the past month, quarter and year, plus implied correlation. To keep forecasts inside $[-1, 1]$ and errors closer to normal, all correlations enter through the Fisher transform $z(x) = \operatorname{atanh}(x)$:
+\begin{equation}\label{eq:har}
+  z\bigl(\mathrm{RC}^{(63)}_{t \to t+63}\bigr) = a + b_1\, z(\mathrm{RC}^{(21)}_t) + b_2\, z(\mathrm{RC}^{(63)}_t) + b_3\, z(\mathrm{RC}^{(252)}_t) + b_4\, z(\mathrm{IC}_t) + \varepsilon_t,
+\end{equation}
+where $\mathrm{RC}^{(n)}_t$ is the average correlation (equation~\eqref{eq:avgcorr} with realized volatilities of daily log returns) over the $n$ trading days up to $t$. The forecast is $\widehat{\mathrm{RC}}_t = \tanh(\hat a + \hat b_1 z(\cdot) + \dots)$.
+
+\paragraph{Walk-forward estimation.} The model is re-estimated every month by OLS on all past entry dates whose 63-day target window had already ended at $t$ (an expanding window, at least 36 observations). The first forecast is for April 2000. With each estimation we also record the in-sample root mean squared error, $\mathrm{RMSE}_t$, in correlation units, which measures how uncertain the forecast is.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{HAR forecast of 63-day realized correlation, equation~\eqref{eq:har}. Coefficients in Fisher-$z$ space, Newey--West $t$-statistics (3 lags) in parentheses. The walk-forward model is re-estimated each month; the two columns show the estimate on data up to 2010 and on the full sample. RMSE in correlation units.}
+  \label{tab:har}
+  \begin{tabular}{lcc}
+    \toprule
+    & 1997--2010 & 1997--2025 \\
+    \midrule
+    Constant                     & 0.091 (3.0) & 0.147 (4.6) \\
+    $z(\mathrm{RC}^{(21)})$      & 0.223 (2.3) & 0.142 (2.2) \\
+    $z(\mathrm{RC}^{(63)})$      & 0.063 (0.5) & 0.085 (0.8) \\
+    $z(\mathrm{RC}^{(252)})$     & 0.358 (2.2) & 0.037 (0.4) \\
+    $z(\mathrm{IC})$             & 0.051 (0.4) & 0.227 (1.9) \\
+    \midrule
+    Observations                 & 165 & 341 \\
+    $R^2$ ($z$ space)            & 0.42 & 0.23 \\
+    RMSE (in sample)             & 0.087 & 0.107 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:har} shows that the most recent month of realized correlation always matters, while the weight shifts over time from the one-year average (up to 2010) to implied correlation (full sample). This instability is one reason for re-estimating the model every month. Out of sample, the walk-forward forecast has an RMSE of 11.4 correlation points, against 13.5 for the naive forecast that next quarter's correlation equals last quarter's.
+
+\subsection{Step 2: richness}
+
+Richness is the excess of implied over forecast realized correlation:
+\begin{equation}\label{eq:rich}
+  R_t = \mathrm{IC}_t - \widehat{\mathrm{RC}}_t .
+\end{equation}
+It averages 7.7 correlation points, close to the realized premium of Section~\ref{sec:premium}, and ranges from $-6.6$ to $+24.8$ (Figure~\ref{fig:richsig}).
+
+\subsection{Step 3: the cost hurdle}
+
+Richness is worth trading only if it pays for the costs. Costs are paid in vol points; richness is measured in correlation points. The hurdle converts one into the other.
+
+\paragraph{Cost of a tranche in vol points.} For each straddle $x$ selected on date $t$ (SPX and the top-20 names), the entry cost per unit of vega is the half-spread observed that day:
+\begin{equation}\label{eq:hs}
+  h_{x,t} = \frac{\tfrac12\bigl(\mathrm{ask}^{C}_{x,t} - \mathrm{bid}^{C}_{x,t}\bigr) + \tfrac12\bigl(\mathrm{ask}^{P}_{x,t} - \mathrm{bid}^{P}_{x,t}\bigr)}{\nu^{C}_{x,t} + \nu^{P}_{x,t}} ,
+\end{equation}
+with $\nu$ the vega of the call and of the put per vol point. Since the strategy holds to expiry, there is no exit spread. Adding the expected hedging cost $\bar H_t$ (the average hedging cost of all tranches already closed at $t$), the cost of a tranche with one unit of SPX vega is
+\begin{equation}\label{eq:costt}
+  \kappa_t = h_{\mathrm{SPX},t} + \sqrt{\mathrm{IC}_t}\sum_{i=1}^{20}\tilde w_{i,t}\, h_{i,t} + \bar H_t ,
+\end{equation}
+where $\tilde w_{i,t}$ are market-capitalization weights renormalized over the 20 names and $\sqrt{\mathrm{IC}_t}$ is the size of the long leg.
+
+\paragraph{Conversion to correlation points.} By equation~\eqref{eq:avgcorr}, a change $d\rho$ in the correlation priced into the index moves index volatility by $d\sigma_I = C\,d\rho/(2\sigma_I)$. A tranche earns, per unit of vega, the index volatility mispricing, so the correlation premium needed to cover $\kappa_t$ is
+\begin{equation}\label{eq:hurdle}
+  c_t = \frac{\kappa_t}{100}\cdot\frac{2\,\sigma_{I,t}}{C_t},
+  \qquad C_t = \Bigl(\sum_i w_{i,t}\sigma_{i,t}\Bigr)^2 - \sum_i w_{i,t}^2\sigma_{i,t}^2 ,
+\end{equation}
+with $\sigma_{I,t}$ the 91-day SPX implied volatility and $\sigma_{i,t}$ the members' implied volatilities on date $t$. The hurdle averages 3.3 correlation points (range 0.8--8.2). It falls over time with spreads, and it is known on the trade date, so it introduces no look-ahead.
+
+\subsection{Step 4: sizing}
+
+The size of the new tranche, as a fraction of a full tranche, is
+\begin{equation}\label{eq:size}
+  s_t = \min\left( \frac{\max(R_t - c_t,\, 0)}{\mathrm{RMSE}_t},\; 1 \right).
+\end{equation}
+The strategy does not trade when richness is below the hurdle. It scales up as the excess grows and reaches full size when the excess equals one forecast error, so a richness reading that could be just noise gets a small position. In the sample the strategy trades in 79\% of months, with an average size of 0.61 when it trades, and at full size in 23\% of months. A binary version ($s_t = 1$ whenever $R_t > c_t$) is reported for comparison.
+
+\subsection{Step 5: positions and P\&L}
+
+With a total vega budget $V$, each month's tranche is one-third of it, scaled by $s_t$:
+\begin{equation}\label{eq:pos}
+  \text{SPX straddle: } -\,\frac{s_t V}{3}\ \text{of vega}, \qquad
+  \text{straddle on name } i\text{: } +\,\frac{s_t V}{3}\,\sqrt{\mathrm{IC}_t}\;\tilde w_{i,t}\ \text{of vega}.
+\end{equation}
+Each straddle is bought at the ask or sold at the bid, marked at mid, delta-hedged daily and settled at expiry. The daily P\&L of a long straddle, per unit of its vega at entry $\nu_0$, is
+\begin{equation}\label{eq:daily}
+  \pi_{d} = \frac{1}{\nu_0}\Bigl[\bigl(m_d - m_{d-1}\bigr) - \Delta_{d-1} S_{d-1}\bigl(R_d - r\,\delta t\bigr) - r\, m_{d-1}\,\delta t - \text{hedge cost}_d\Bigr],
+\end{equation}
+where $m_d$ is the mid price (the intrinsic value on the expiry date), $\Delta_d$ the straddle delta, $S_d$ the underlying price, $R_d$ its total return, $r$ the 91-day zero rate and $\delta t = 1/252$. The hedge cost is 1\,bp (stocks) or 0.5\,bp (index) of the change in hedge notional. The entry half-spread $h_{x,t}$ is charged on day 0. The tranche P\&L is $\sum_i \sqrt{\mathrm{IC}_t}\,\tilde w_{i,t}\,\pi^{(i)} - \pi^{(\mathrm{SPX})}$, and the strategy's P\&L is the sum over the tranches alive each day, in vol points per unit of vega budget.
+
+\subsection{How we evaluate it}
+
+The natural benchmark is the same trade opened at full size every month. Because the strategy uses less vega, comparing raw P\&L or drawdowns would reward it simply for taking less risk. We therefore rescale the benchmark to the strategy's average vega and compare Sharpe ratios with a one-sided block-bootstrap test (three-month blocks, 10{,}000 draws) and drawdowns with the ratio of maximum drawdowns. We also report the vega-neutral version, deflated Sharpe ratios for the 20 strategies evaluated in this project, and the robustness of the result to the sample split.
+
+\subsection{Results}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.92\textwidth]{figures/fig_richness_signal.png}
-  \caption{Richness (implied correlation minus forecast realized correlation) and the cost hurdle observed at entry, in correlation points (correlation-weighted trade). Shaded: months in which the strategy trades. Richness exceeded the hurdle in about three months out of four.}
+  \caption{Richness $R_t$ (implied correlation minus forecast realized correlation) and the cost hurdle $c_t$, in correlation points (correlation-weighted trade). Shaded: months in which the strategy trades.}
   \label{fig:richsig}
 \end{figure}
 
 \begin{figure}[t]
   \centering
-  \begin{minipage}{0.45\textwidth}
-    \includegraphics[width=\textwidth]{figures/fig_richness_quintiles.png}
-  \end{minipage}\hfill
-  \begin{minipage}{0.53\textwidth}
-    \includegraphics[width=\textwidth]{figures/fig_richness_cumulative.png}
-  \end{minipage}
-  \caption{Left: average P\&L per tranche (vega-neutral, held to expiry) by quintile of richness at entry; the richest months are not the most profitable. Right: cumulative net P\&L of the richness strategies and of trading every month (2000--2025; the dotted vertical line marks 2011).}
-  \label{fig:richres}
+  \includegraphics[width=0.92\textwidth]{figures/fig_proposed.png}
+  \caption{The proposed strategy. Top: cumulative net P\&L, against the same trade at full size every month. Bottom: size $s_t$ of each new tranche (equation~\eqref{eq:size}).}
+  \label{fig:proposed}
 \end{figure}
-
-\subsection{Results}
 
 \begin{table}[t]
   \centering
   \small
-  \caption{Richness strategies against trading every month (walk-forward, April 2000--August 2025). Monthly ladder P\&L per unit of vega budget. ``Vega'' is the average share of the budget in use. $\Delta$SR and $p$: Sharpe difference against trading every month rescaled to the same average vega, one-sided block-bootstrap $p$-value. DD ratio: maximum drawdown relative to that benchmark.}
+  \caption{The proposed strategy against alternatives, April 2000--August 2025. Monthly ladder, net P\&L in vol points per unit of vega budget. ``Vega'' is the average share of the budget in use; ``per unit vega'' divides the mean by it. Crash losses are cumulative over the Lehman (Sep--Nov 2008) and Covid (Feb--Apr 2020) windows.}
+  \label{tab:proposed}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lrrrcrrrr}
+    \toprule
+    Strategy & Vega & Mean & Per unit vega & Sharpe [95\% CI] & Max DD & Worst month & Lehman & Covid \\
+    \midrule
+    Proposed (richness-sized, CW, top-20)      & 0.57 & 0.045 & 0.079 & 0.23 [$-$0.13, 0.59] & 7.1 & $-$3.1 & $+$0.4 & $-$2.3 \\
+    Same trade every month, full size          & 1.17 & 0.087 & 0.074 & 0.26 [$-$0.12, 0.63] & 15.6 & $-$3.5 & $-$1.6 & $-$3.0 \\
+    Short SPX straddle alone, every month      & 1.17 & 0.430 & 0.369 & 0.63 [0.14, 1.32] & 28.5 & $-$18.8 & $-$25.1 & $-$23.5 \\
+    \bottomrule
+  \end{tabular}}
+\end{table}
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Richness strategies against trading every month (walk-forward, April 2000--August 2025). $\Delta$SR and $p$: Sharpe difference against trading every month rescaled to the same average vega, one-sided block-bootstrap $p$-value. DD ratio: maximum drawdown relative to that benchmark.}
   \label{tab:rich}
   \resizebox{\textwidth}{!}{%
   \begin{tabular}{llrrcrrrr}
@@ -396,28 +497,44 @@ The idea is the natural one for a trader: sell correlation when the index prices
                  & Richness, binary        & 0.84 & $-$0.030 & $-$0.08 [$-$0.52, 0.31] & 27.4 & $-$0.01 & 0.56 & 0.78 \\
     \midrule
     Correlation-weighted & Every month     & 1.17 & 0.087 & 0.26 [$-$0.12, 0.63] & 15.6 & & & \\
-                 & Richness, continuous    & 0.57 & 0.045 & 0.23 [$-$0.13, 0.60] & 7.1 & $-$0.02 & 0.59 & 0.94 \\
+                 & Richness, continuous (proposed) & 0.57 & 0.045 & 0.23 [$-$0.13, 0.60] & 7.1 & $-$0.02 & 0.59 & 0.94 \\
                  & Richness, binary        & 0.93 & 0.054 & 0.18 [$-$0.17, 0.53] & 10.9 & $-$0.07 & 0.78 & 0.88 \\
     \bottomrule
   \end{tabular}}
 \end{table}
 
+\begin{figure}[t]
+  \centering
+  \begin{minipage}{0.45\textwidth}
+    \includegraphics[width=\textwidth]{figures/fig_richness_quintiles.png}
+  \end{minipage}\hfill
+  \begin{minipage}{0.53\textwidth}
+    \includegraphics[width=\textwidth]{figures/fig_richness_cumulative.png}
+  \end{minipage}
+  \caption{Left: average P\&L per tranche (vega-neutral, held to expiry) by quintile of richness at entry. Right: cumulative net P\&L of all richness variants and of trading every month (2000--2025; the dotted line marks 2011).}
+  \label{fig:richres}
+\end{figure}
+
+\paragraph{What the strategy delivers.} Table~\ref{tab:proposed} and Figure~\ref{fig:proposed} summarize it.
 \begin{itemize}
-  \item \textbf{Richness does not predict tranche P\&L.} Regressing net tranche P\&L on richness at entry gives a slope that is negative and not significant ($t = -1.7$, $R^2 = 0.02$). By quintiles (Figure~\ref{fig:richres}, left), the cheapest quintile earned the most (0.69 net) and the richest one lost ($-0.43$).
-  \item \textbf{Timing reduces exposure, not risk-adjusted performance} (Table~\ref{tab:rich}). The richness strategies hold about half the vega and therefore have smaller drawdowns, but against a benchmark with the same average vega their Sharpe ratios are equal or slightly lower ($p$ between 0.56 and 0.78), and the drawdown reduction is no larger than the lower exposure explains (DD ratios 0.78--0.94).
-  \item \textbf{The conclusion does not depend on the period.} In 2011--2025 alone the continuous correlation-weighted strategy has the same Sharpe ratio as trading every month (0.35 against 0.35). Splitting the sample in 2005, 2008, 2011 or 2015, the strategy has a lower Sharpe ratio than trading every month before each split and a slightly higher one after it, by small and unstable amounts: no split gives it a consistent edge.
-  \item \textbf{Deflated Sharpe ratios} are low for all strategies, accounting for the 20 strategies evaluated in this project: about 0.02 for every vega-neutral version and 0.23--0.36 for the correlation-weighted ones, the highest being trading every month.
+  \item \textbf{It is profitable after all costs.} It earns 0.045 vol points per month per unit of vega budget (0.18 before costs), with a Sharpe ratio of 0.23.
+  \item \textbf{It is capital-efficient.} It uses on average 57\% of the vega budget, and its maximum drawdown (7.1) is less than half that of the same trade at full size every month (15.6) and a quarter of that of a short SPX straddle (28.5).
+  \item \textbf{It avoids some calm-market shocks.} When implied correlation is low and calm, richness is often below the hurdle and the strategy stays out. It lost almost nothing in February 2018 ($-0.3$ against $-3.4$ for trading every month) and in August 2024 (0.0 against $-2.8$), and it was positive over the Lehman window.
+  \item \textbf{The confidence intervals are wide.} The Sharpe ratio interval includes zero, as it does for every version of the dispersion trade since 2000.
 \end{itemize}
 
-\paragraph{Why timing fails.} Three reasons combine.
+\paragraph{What the signal adds.} Against the same trade rescaled to the same average vega, the proposed strategy has the same Sharpe ratio (difference $-0.02$, $p = 0.59$) and a drawdown ratio of 0.94 (Table~\ref{tab:rich}). Per unit of vega deployed it earns 0.079 against 0.074. The richness signal therefore decides \emph{how much} to trade, and the resulting lower exposure explains the smaller drawdown, but it does not pick better months. The same holds for the vega-neutral version, for the binary rule, in 2011--2025 alone (Sharpe 0.35 for both), and for split years 2005, 2008, 2011 and 2015: before each split the strategy does slightly worse than trading every month, after it slightly better, by small and unstable amounts. Deflated Sharpe ratios, which account for the 20 strategies evaluated in this project, are 0.31 for the proposed strategy and 0.36 for trading every month.
+
+\paragraph{Why richness does not pick better tranches.} Regressing net tranche P\&L on richness at entry gives a negative, insignificant slope ($t = -1.7$, $R^2 = 0.02$). By quintile (Figure~\ref{fig:richres}), the cheapest quintile earned the most (0.69 net) and the richest lost ($-0.43$). Three reasons combine.
 \begin{enumerate}
-  \item \textbf{The P\&L of a tranche is dominated by realized moves, not by the premium.} Its standard deviation is about 3--4 vol points, against an expected premium of 1--2. Single-stock jumps (earnings, takeovers) and the path of the index decide most tranches, and no correlation forecast sees them coming.
-  \item \textbf{The forecast is noisy.} An out-of-sample error of 11 correlation points is larger than the average richness (7.7), so a large measured richness is often forecast error rather than premium.
-  \item \textbf{Rich months are dangerous months.} Richness is highest after volatility spikes, which are exactly when buying single-stock volatility is most expensive (Section~\ref{sec:risk}). The risk that makes the premium large is the one that hurts the tranche.
+  \item \textbf{Tranche P\&L is dominated by realized moves.} Its standard deviation is 3--4 vol points, against an expected premium of 1--2. Single-stock jumps and the path of the index decide most tranches.
+  \item \textbf{The forecast is noisy.} An out-of-sample error of 11 correlation points is larger than the average richness (7.7).
+  \item \textbf{Rich months are dangerous months.} Richness is highest after volatility spikes, which is when buying single-stock volatility is most expensive (Section~\ref{sec:risk}).
 \end{enumerate}
+The same signal does predict the payoff of a correlation swap (Section~\ref{sec:cswap}), which pays correlation without the single-stock noise.
 
 \begin{desk}
-Do not wait for implied correlation to look rich: the months that look richest are the ones in which the long single-stock leg is most at risk. Trading every month with stable size was as good as or better than any timing rule we tested.
+The proposed strategy is a sensible way to run the trade: hold to expiry, trade the 20 largest names, size the long leg by $\sqrt{\text{IC}}$, and scale the position by how rich correlation is relative to a forecast, net of today's spreads. It halves the capital and the drawdown of trading at full size every month. Do not expect the signal to raise the return per unit of risk: its value is in sizing and in staying out of cheap, calm markets.
 \end{desk}
 
 \section{Can machine learning do better?}\label{sec:ml}
@@ -537,7 +654,7 @@ A short correlation swap is the cleanest way to sell the premium, but it is a cr
 
 \section{Conclusion}
 
-Index options on the S\&P~500 have priced roughly 8.5 points more correlation than was realized, on average, for thirty years. A desk that sells this correlation through a textbook vega-neutral dispersion trade would have earned little after costs. Holding to expiry and correlation-weighting the long leg turn it into a modestly profitable trade (about 0.6 vol points per quarterly tranche) whose main merit is risk control: it keeps part of the index volatility premium while losing an order of magnitude less than a short index straddle in a crash. Trying to time the trade, with a cost-aware richness signal or with machine learning, does not help. Selling correlation directly through swaps would have paid at small dealer margins, and there the richness signal does help, but the instrument concentrates the crash risk that dispersion partly hedges.
+Index options on the S\&P~500 have priced roughly 8.5 points more correlation than was realized, on average, for thirty years. A desk that sells this correlation through a textbook vega-neutral dispersion trade would have earned little after costs. Holding to expiry and correlation-weighting the long leg turn it into a modestly profitable trade (about 0.6 vol points per quarterly tranche) whose main merit is risk control: it keeps part of the index volatility premium while losing an order of magnitude less than a short index straddle in a crash. Our proposed strategy adds a cost-aware richness signal to size the trade: it halves capital and drawdowns but does not raise the return per unit of risk, and machine learning does not help either. Selling correlation directly through swaps would have paid at small dealer margins, and there the richness signal does help, but the instrument concentrates the crash risk that dispersion partly hedges.
 
 \bibliographystyle{apalike}
 \bibliography{references}
@@ -568,7 +685,20 @@ A simpler valuation that prices options at OptionMetrics' standardized volatilit
 
 \section{The pre-registered timing test}\label{app:prereg}
 
-Before running any of the analyses above we pre-registered, in the public repository, a timing rule and the criteria to keep or drop it. The rule opened a vega-neutral top-50 tranche, closed ten days before expiry, only when implied correlation exceeded a HAR forecast of realized correlation by a fixed cost threshold (9.4 correlation points, estimated on 1996--2010) plus half the forecast error, and VIX was below its 1996--2010 80th percentile. A second, machine-learning version (ridge regression and gradient-boosted trees on eight signals) was pre-registered before the test. All parameters were estimated on 1996--2010 and the rules were evaluated once on 2011--2025.
+Before running any of the analyses above we pre-registered, in the public repository, a first version of the strategy and the criteria to keep or drop it. All parameters were estimated on 1996--2010, frozen, and the rules were evaluated once on 2011--2025. The design differed from the proposed strategy of Section~\ref{sec:timing} in four ways: a vega-neutral top-50 book, exit ten days before expiry, a cost threshold frozen at its 1996--2010 level, and a VIX filter.
+
+\paragraph{Forecast.} The HAR model of equation~\eqref{eq:har}, with a 53-trading-day target (the life of a tranche to its early exit), estimated once on the 166 entry dates whose target window ended by December 2010: $\hat a = 0.090$, $\hat b_1 = 0.226$, $\hat b_2 = 0.129$, $\hat b_3 = 0.307$, $\hat b_4 = 0.036$, in-sample RMSE 0.088.
+
+\paragraph{Cost threshold.} The average round-trip cost of a tranche over 1996--2010, entry \emph{and} exit half-spreads of the contracts actually selected, converted with equation~\eqref{eq:hurdle}: $c = 0.094$ correlation points (2.25 vol points: 0.80 for SPX, 1.45 for the basket).
+
+\paragraph{Rule.} Open a full tranche if and only if
+\begin{equation}\label{eq:prereg}
+  \mathrm{IC}_t - \widehat{\mathrm{RC}}_t > c + k\cdot\mathrm{RMSE} \quad\text{and}\quad \mathrm{VIX}_t < \mathrm{VIX}^{(80\%)}_{1996\text{--}2010} = 26.8, \qquad k = 0.5 .
+\end{equation}
+
+\paragraph{Final trade (machine learning).} A ridge regression (penalty chosen by expanding-window cross-validation inside 1996--2010) and gradient-boosted trees (200 trees of depth 2, learning rate 0.05, subsampling 0.8) forecasting the net tranche P\&L from eight signals. Size $= \min(\max(\hat p_t, 0)/m, 1)$, with $m$ the 90th percentile of in-sample predictions.
+
+\paragraph{Kill test.} A rule was kept only if, on 2011--2025, (i) its Sharpe ratio exceeded that of the unconditional ladder rescaled to the same average vega with a one-sided block-bootstrap $p < 0.10$; (ii) its maximum drawdown was at most two-thirds of the benchmark's; and (iii) both held in point estimate for $k \in \{0, 0.25, 0.5, 0.75, 1\}$.
 
 \begin{table}[h]
   \centering

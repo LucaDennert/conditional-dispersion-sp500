@@ -1,0 +1,104 @@
+{
+ "proposed": {
+  "mean_month": 0.045,
+  "mean_ci": [
+   -0.026,
+   0.114
+  ],
+  "per_unit_vega_deployed": 0.079,
+  "avg_vega": 0.571,
+  "sharpe": 0.23,
+  "sharpe_ci": [
+   -0.13,
+   0.59
+  ],
+  "maxDD": 7.13,
+  "worst_month": -3.09,
+  "skew": -0.19,
+  "gross_mean_month": 0.176,
+  "share_months_traded": 0.79,
+  "share_full_size": 0.23,
+  "avg_size_when_traded": 0.61
+ },
+ "always_cw": {
+  "mean_month": 0.087,
+  "mean_ci": [
+   -0.042,
+   0.214
+  ],
+  "per_unit_vega_deployed": 0.074,
+  "avg_vega": 1.167,
+  "sharpe": 0.26,
+  "sharpe_ci": [
+   -0.12,
+   0.63
+  ],
+  "maxDD": 15.56,
+  "worst_month": -3.54,
+  "skew": 0.06
+ },
+ "short_spx": {
+  "mean_month": 0.43,
+  "mean_ci": [
+   0.119,
+   0.717
+  ],
+  "per_unit_vega_deployed": 0.369,
+  "avg_vega": 1.167,
+  "sharpe": 0.63,
+  "sharpe_ci": [
+   0.14,
+   1.32
+  ],
+  "maxDD": 28.48,
+  "worst_month": -18.79,
+  "skew": -2.92
+ },
+ "stress": {
+  "9/11 (Sep 2001)": {
+   "proposed": -0.93,
+   "always_cw": -1.17,
+   "short_spx": -2.8
+  },
+  "2002 bear market (Jul-Oct 2002)": {
+   "proposed": 0.47,
+   "always_cw": 0.47,
+   "short_spx": -6.34
+  },
+  "Lehman (Sep-Nov 2008)": {
+   "proposed": 0.38,
+   "always_cw": -1.59,
+   "short_spx": -25.07
+  },
+  "Flash crash (May 2010)": {
+   "proposed": -3.3,
+   "always_cw": -3.3,
+   "short_spx": -4.72
+  },
+  "US downgrade (Aug 2011)": {
+   "proposed": -1.6,
+   "always_cw": -1.52,
+   "short_spx": -7.11
+  },
+  "China deval. (Aug 2015)": {
+   "proposed": -0.94,
+   "always_cw": -1.76,
+   "short_spx": -3.21
+  },
+  "Volmageddon (Feb 2018)": {
+   "proposed": -0.28,
+   "always_cw": -3.41,
+   "short_spx": -6.52
+  },
+  "Covid (Feb-Mar 2020)": {
+   "proposed": -2.32,
+   "always_cw": -3.03,
+   "short_spx": -23.52
+  },
+  "Yen carry unwind (Aug 2024)": {
+   "proposed": 0.0,
+   "always_cw": -2.83,
+   "short_spx": -3.08
+  }
+ }
+}
