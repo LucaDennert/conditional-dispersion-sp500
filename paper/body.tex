@@ -3,14 +3,14 @@
 
 \begin{abstract}
 \noindent
-Index options on the S\&P~500 consistently price more correlation among the index members than is subsequently realized. We measure this correlation risk premium from 1996 to 2025 with OptionMetrics and CRSP data and ask how much of it an investor and an equity derivatives desk can capture with a dispersion trade: short an index straddle, long straddles on the largest members, delta-hedged, using the listed contracts and quotes that were actually available. The premium is large: three-month implied correlation exceeds realized correlation by 8.5 points on average (95\% CI 6.5--10.5). The textbook vega-neutral trade earns 1.35 vol points per three-month tranche before costs but only 0.31 after them, an amount not distinguishable from zero. Paying the spread once (holding to expiry) and sizing the long leg by the square root of implied correlation lifts the net result to 0.57 vol points per tranche (CI 0.21--0.94), with an annualized Sharpe ratio of 0.51 for the monthly ladder and much smaller tails than selling index straddles outright: in the 2008 and 2020 crashes the trade lost 1.6 and 3.0 vol points per unit of vega budget, against 25 and 24 for a short SPX straddle. Most of this return is the index volatility premium earned with less crash risk. We then propose a complete strategy: the correlation-weighted trade on the 20 largest names, held to expiry, sized each month by how much implied correlation exceeds a walk-forward forecast of realized correlation net of that day's trading costs. It is profitable after costs and uses half the vega and half the drawdown of trading at full size every month, but its return per unit of risk is the same: the signal decides how much to trade, not which months are better. Walk-forward machine-learning models do no better. A simulated short correlation swap would have broken even at a dealer margin of 8.5 correlation points (4.8 since 2020), with large losses after calm periods; for this instrument the richness signal does improve results. Finally, who pays the spread decides who earns the premium: executed at mid, as a market-making desk approximately can, the correlation-weighted trade earns 1.24 vol points per tranche with a Sharpe ratio of 1.09; an investor paying the full spread keeps less than half of it.
+S\&P~500 index options consistently price more correlation among the index members than is later realized. We use thirty years of listed option quotes (OptionMetrics, 1996--2025) to measure this correlation risk premium and to ask who can actually earn it: an investor who pays the bid/ask spread, or a market-making desk that trades close to mid. The premium is large, 8.5 correlation points at three months (95\% CI 6.5--10.5), or about 1.8 vol points on the index per quarter. A dispersion trade built from the listed contracts (short SPX straddle, long straddles on the 20 largest members, delta-hedged, held to expiry, long leg scaled by $\sqrt{\text{implied correlation}}$) earns 1.24 vol points per quarterly tranche at mid, with a Sharpe ratio of 1.09, but only 0.57 for an investor paying the full spread; the textbook vega-neutral version barely survives costs. Compared with selling SPX straddles outright, the trade keeps about 40\% of the carry while losing an order of magnitude less in crashes (1.6 and 3.0 vol points in 2008 and 2020, against 25 and 24). Timing adds little: a strategy that sizes each tranche by how rich implied correlation is relative to a walk-forward forecast, net of the day's spreads, halves capital and drawdowns but earns the same per unit of risk, and machine-learning forecasts fail out of sample. The same richness signal does predict the payoff of a correlation swap, which pays correlation without single-stock noise, but swaps break even only at dealer margins below about 5 correlation points since 2020.
 \end{abstract}
 
 \section{Introduction}
 
 The volatility of an index depends on the volatilities of its members and on how they move together. If all stocks moved in lockstep, index volatility would equal the average stock volatility; if they were independent, most of it would diversify away. Index options therefore embed a price for the \emph{average correlation} among the members. A well-documented fact is that this price is too high on average: the correlation implied by option prices exceeds the correlation that is later realized \citep{DMV2009}. The trade that harvests the gap is the \emph{dispersion trade}: sell index volatility, buy volatility on the members.
 
-This paper studies the trade from the point of view of an equity derivatives desk. We ask four questions:
+This paper studies the trade from three points of view: the researcher who wants to measure the premium, the investor who wants to exploit it as a price-taker, and the market-making desk that provides liquidity in the options involved. We ask six questions:
 \begin{enumerate}
   \item \textbf{How large is the premium, and how stable?} (Section~\ref{sec:premium})
   \item \textbf{How much does the basic trade earn, before and after realistic costs?} (Section~\ref{sec:basic})
@@ -34,8 +34,17 @@ This paper studies the trade from the point of view of an equity derivatives des
 \end{itemize}
 
 \begin{desk}
-The correlation premium is best treated as a carry trade to be held steadily, not timed. The implementation matters more than the signal: hold to expiry, trade a liquid basket, and size the long leg by $\sqrt{\text{IC}}$ rather than vega-neutral. What the trade really offers is the index volatility premium with a built-in crash hedge.
+\textbf{Investors:} treat the correlation premium as a carry trade with a built-in crash hedge, not as a timing opportunity. The version that survives the full spread is correlation-weighted, on a liquid basket, held to expiry. \textbf{Market makers:} at mid the same book earns about twice as much, with a Sharpe ratio around 1. \textbf{Researchers:} the premium is robust, but in vol points it is of the same order as execution costs, which decides who earns it.
 \end{desk}
+
+\paragraph{Three audiences.} The paper is written to be useful to three kinds of readers.
+\begin{itemize}
+  \item \textbf{Researchers.} We measure the correlation risk premium of \citet{DMV2009} with tradable prices rather than interpolated volatilities and show how much of it survives execution, how its tails compare with those of the index variance premium \citep{CarrWu2009}, and that its level predicts correlation-swap payoffs but not dispersion P\&L. A pre-registered out-of-sample test documents how easily timing rules overfit.
+  \item \textbf{Investors} looking to exploit the anomaly as price-takers. We show which implementation survives the full bid/ask spread, what it earns, what it risks, and why timing it does not pay.
+  \item \textbf{Market-making desks.} We report every result at mid as well, and show that the premium is largely theirs: at mid the trade is a solid book with a Sharpe ratio around 1 and small crash losses.
+\end{itemize}
+
+\paragraph{Related literature.} \citet{DMV2009} show that index options are expensive relative to their constituents because correlation risk is priced, and that this accounts for most of the index variance risk premium documented by \citet{BakshiKapadia2003} and \citet{CarrWu2009}. \citet{BKT2014} show that exposure to correlation risk explains part of the cross-section of hedge fund returns. \citet{Marshall2009} documents profits from dispersion trading on U.S.\ options using simplified execution assumptions. On the demand side, \citet{BollenWhaley2004} and \citet{GPP2009} show that end-user demand moves option prices, and \citet{BKM2003} explain the steeper skew of index options. \citet{CaoHan2013} show that delta-hedged single-stock options lose money on average, which is the long leg of our trade. We add evidence with listed bid/ask quotes, an explicit distinction between price-takers and liquidity providers, a tail-risk comparison with naked index volatility, and walk-forward and pre-registered tests of timing.
 
 All code, the pre-registration of the original timing test and the aggregated results are public.\footnote{\url{https://github.com/LucaDennert/conditional-dispersion-sp500}. Licensed data are not redistributed.}
 
@@ -150,7 +159,7 @@ Table~\ref{tab:premium} and Figure~\ref{fig:premium} show three facts.
 The premium has shrunk since 2020 (4.8 points at three months, 1.6 at one month), plausibly as more capital and more structured-product supply have entered the market for correlation.
 
 \begin{desk}
-In correlation points the premium looks large; in vol points it is about 1.8 on the index per quarter. That is the budget out of which all trading costs must be paid.
+\textbf{Both:} 8.5 correlation points are worth about 1.8 vol points on the index per quarter. That is the budget out of which all trading costs must be paid: an investor pays most of it away, a desk trading near mid keeps most of it.
 \end{desk}
 
 \section{The basic dispersion trade}\label{sec:basic}
@@ -263,7 +272,7 @@ We regress net tranche P\&L on the market, size, value, profitability, investmen
 \end{itemize}
 
 \begin{desk}
-Hold to expiry and size the long leg by $\sqrt{\text{IC}}$. Exiting early doubles the cost and is the most expensive mistake. Fifty names are not better than twenty. For an investor paying the full spread, expect about 0.3--0.6 vol points per three-month tranche net, with long flat periods; a desk trading near mid earns about twice as much (Section~\ref{sec:spread}).
+\textbf{Investors:} hold to expiry, trade 20 names, size the long leg by $\sqrt{\text{IC}}$; expect about 0.3--0.6 vol points per tranche net, with long flat periods. Exiting early doubles the spread and is the most expensive mistake. \textbf{Market makers:} at mid the same trades earn 1.1--1.2 vol points per tranche, and exiting early costs little (Section~\ref{sec:spread}).
 \end{desk}
 
 \section{Risks: what happens in the tails?}\label{sec:risk}
@@ -345,7 +354,7 @@ Hold to expiry and size the long leg by $\sqrt{\text{IC}}$. Exiting early double
 \end{itemize}
 
 \begin{desk}
-Naked short index volatility is the higher-carry trade, but it loses a quarter of a vega budget in a single crash. A correlation-weighted dispersion book keeps about 40\% of the carry with crash losses an order of magnitude smaller. The main dispersion-specific risk is buying single-stock volatility just after a spike.
+\textbf{Both:} naked short index volatility is the higher-carry trade, but it loses a quarter of a vega budget in a single crash. A correlation-weighted dispersion book keeps about 40\% of the carry with crash losses an order of magnitude smaller. The main dispersion-specific risk is buying single-stock volatility just after a spike. \textbf{Market makers:} exchange margin is not netted across underlyings, so the capital tied up exceeds the net risk.
 \end{desk}
 
 \section{The proposed strategy: richness-sized, correlation-weighted dispersion}\label{sec:timing}
@@ -536,10 +545,10 @@ The natural benchmark is the same trade opened at full size every month. Because
 The same signal does predict the payoff of a correlation swap (Section~\ref{sec:cswap}), which pays correlation without the single-stock noise.
 
 \begin{desk}
-The proposed strategy is a sensible way to run the trade: hold to expiry, trade the 20 largest names, size the long leg by $\sqrt{\text{IC}}$, and scale the position by how rich correlation is relative to a forecast, net of today's spreads. It halves the capital and the drawdown of trading at full size every month. Do not expect the signal to raise the return per unit of risk: its value is in sizing and in staying out of cheap, calm markets.
+\textbf{Investors:} use richness to size the trade and to stay out of cheap, calm markets; it halves the capital and the drawdown. Do not expect it to raise the return per unit of risk. \textbf{Market makers:} at mid the cost hurdle falls below one correlation point and the strategy trades almost every month; the conclusion is the same (Section~\ref{sec:spread}).
 \end{desk}
 
-\section{Investor or desk? How much the spread matters}\label{sec:spread}
+\section{Investors versus market makers: who pays the spread?}\label{sec:spread}
 
 \textbf{Short answer:} who captures the premium depends on who pays the spread. Executed at mid, as a market-making desk can approximately do, every version of the dispersion trade is clearly profitable, including the correlation-weighted one with a Sharpe ratio above 1. An investor who buys at the ask and sells at the bid keeps less than half of that.
 
@@ -626,7 +635,7 @@ This is consistent with the demand-based view of Section~\ref{sec:nutshell}: the
 \paragraph{The timing signal under cheaper execution.} With lower costs the hurdle falls (from 3.3 to 0.7 correlation points) and the proposed strategy trades more often. In every scenario its Sharpe ratio stays slightly below that of trading every month at full size (0.75 against 0.82 at mid), while its drawdown stays smaller (6.3 against 7.8). The conclusion of Section~\ref{sec:timing} does not depend on execution: the signal is a sizing and risk tool, not a source of extra return.
 
 \begin{desk}
-For a market-making desk that executes close to mid, correlation-weighted dispersion held to expiry is a genuinely attractive book: about 1.2 vol points per quarterly tranche, a Sharpe ratio around 1, and crash losses of a few vol points. For an investor paying the full spread, the same trade earns less than half of that, and only the hold-to-expiry, correlation-weighted version clearly survives. If you cannot trade single-stock options near mid, the index volatility premium (short SPX straddles) is far cheaper to access, at the cost of its crash risk.
+\textbf{Market makers:} correlation-weighted dispersion held to expiry is a genuinely attractive book at mid: about 1.2 vol points per quarterly tranche, a Sharpe ratio around 1, crash losses of a few vol points. \textbf{Investors:} paying the full spread, the same trade earns less than half of that. If you cannot trade single-stock options near mid, the index volatility premium (short SPX straddles) is far cheaper to access, at the cost of its crash risk.
 \end{desk}
 
 \section{Can machine learning do better?}\label{sec:ml}
@@ -731,7 +740,7 @@ The contrast with Section~\ref{sec:timing} is instructive. The forecast is a for
 \end{itemize}
 
 \begin{desk}
-A short correlation swap is the cleanest way to sell the premium, but it is a crash-exposed trade that loses in one quarter out of five. Its break-even dealer margin was 8.5 correlation points (about 1.8 vol points) over 1996--2025, but only about 5 since 2020: at a margin of 4--6 points there is little left. If you sell correlation through swaps, condition on richness: unlike for dispersion, it clearly helps. Never sell cheap correlation in a calm market.
+\textbf{Investors with OTC access:} a short correlation swap is the cleanest way to sell the premium but loses in one quarter out of five, worst after calm markets. Its break-even dealer margin was 8.5 correlation points over 1996--2025 but about 5 since 2020; sell only when richness exceeds the margin. \textbf{Dealers:} the margin pays for hedging the swap with a dispersion book; at mid that book earns about 1.2 vol points per quarter, which is the economic room for the margin.
 \end{desk}
 
 \section{Discussion}\label{sec:discussion}
@@ -746,7 +755,7 @@ A short correlation swap is the cleanest way to sell the premium, but it is a cr
 
 \section{Conclusion}
 
-Index options on the S\&P~500 have priced roughly 8.5 points more correlation than was realized, on average, for thirty years. A desk that sells this correlation through a textbook vega-neutral dispersion trade would have earned little after costs. Holding to expiry and correlation-weighting the long leg turn it into a modestly profitable trade (about 0.6 vol points per quarterly tranche) whose main merit is risk control: it keeps part of the index volatility premium while losing an order of magnitude less than a short index straddle in a crash. Our proposed strategy adds a cost-aware richness signal to size the trade: it halves capital and drawdowns but does not raise the return per unit of risk, and machine learning does not help either. Selling correlation directly through swaps would have paid at small dealer margins, and there the richness signal does help, but the instrument concentrates the crash risk that dispersion partly hedges.
+S\&P~500 index options have priced roughly 8.5 points more correlation than was realized, on average, for thirty years. For \textbf{researchers}, the premium is robust in tradable prices, but its size in vol points is of the same order as execution costs; its level predicts correlation-swap payoffs but not dispersion P\&L, and timing rules that look strong in sample fail out of sample. For \textbf{investors}, the part that survives the full spread is earned by a correlation-weighted dispersion trade on a liquid basket held to expiry: about 0.6 vol points per quarterly tranche, with crash losses an order of magnitude smaller than a short index straddle. For \textbf{market makers}, who trade close to mid, the same book earns about twice as much with a Sharpe ratio around 1. The correlation risk premium is real; who earns it is decided by who pays the spread.
 
 \bibliographystyle{apalike}
 \bibliography{references}
